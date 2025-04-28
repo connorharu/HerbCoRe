@@ -1,38 +1,14 @@
-from main_f import species_link
 import json
-# import pandas as pd
 import argparse
 import os
-
-def get_config():
-    if os.path.exists('config.json'): # se o json existe
-        with open('config.json', 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return None
-
-def save_config(config):
-    with open('config.json', 'w', encoding='utf-8') as f:
-        json.dump(config, f, indent=4, ensure_ascii=False)
-
-def ask_for_missing_values():
-    # chamado quando config nao possui todos os seus valores configurados no json
-    config = {}
-    
-    config['api_key'] = input("Informe a chave da API: ").strip().strip('"') # pra não ficar com " duplicado
-    config['db_user'] = input("informe o usuário do banco de dados: ").strip().strip('"')
-    config['db_password'] = input("informe a senha do banco de dados: ").strip().strip('"')
-    config['db_host'] = input("informe o host do banco de dados (exemplo: 127.0.0.1): ").strip().strip('"')
-    config['db_schema'] = input("informe o schema do banco de dados: ").strip().strip('"')
-
-    save_config(config)
-    
-    return config
+from main_f import species_link
+from interativo import interactive_mode
+from config import get_config, ask_for_missing_values, save_config
 
 def main():
     config = get_config()
-    
-    # se config está vazio ou incompleto, pede o resto
-    if config is None or 'api_key' not in config or 'db_user' not in config or 'db_password' not in config or 'db_host' not in config or 'db_schema' not in config:
+
+    if config is None or any(k not in config for k in ['api_key', 'db_user', 'db_password', 'db_host', 'db_schema']):
         config = ask_for_missing_values()
 
     api_key = config['api_key']
@@ -43,6 +19,18 @@ def main():
         'database': config['db_schema']
     }
 
+    # escolha do modo de operação
+    print("\ngostaria de um passo a passo para executar os métodos da ferramenta, ou continuar sem auxílio?")
+    print("[1] passo-a-passo (suporte para execução)")
+    print("[2] sem auxílio (argumentos pelo terminal - se já tiver passado um comando, será executado)")
+
+    choice = input("escolha uma opção: ").strip()
+
+    if choice == "1":
+        interactive_mode()
+        return  # sai da função main() para evitar executar argparse depois
+
+    # caso queira executar sozinho, vai pro parser normal, argumentos pelo terminal
     parser = argparse.ArgumentParser(description='interface dos métodos da ferramenta')
     subparsers = parser.add_subparsers(dest="command", help="método a ser executado") # subparsers permitem que métodos utilizem de argumentos diferentes e serem chamados ou não
 
@@ -85,50 +73,43 @@ def main():
     specieslink = species_link(api_key=api_key) # o usuario passa sua propria chave da API
     
     # metadados básicos
-
     if args.command == "metadata":
         metadata = specieslink.get_metadata(name=args.name, id=args.id) # parametro do método, por ex pede o nome da instituiçao
         if metadata: # se tiver metadados sendo requisitados
-            print("\n\nMetadados básicos:\n")
+            print("\n\nmetadados básicos:\n")
             print(json.dumps(metadata, indent=4, ensure_ascii=False)) # print formatado
 
 
-    # # coleções e instituições participantes
-
+    # coleções e instituições participantes
     elif args.command == "participants":
         participants = specieslink.get_participants()
         if participants:
-            print("\n\nParticipantes:\n")
+            print("\n\nparticipantes:\n")
             print(json.dumps(participants, indent=4, ensure_ascii=False)) # print formatado
 
 
-    # # dados de uma instituição por sigla
-
+    # dados de uma instituição por sigla
     elif args.command == "instituition":
         instituition = specieslink.get_institution_data(acronym=args.acronym, id=args.id, lang=args.lang)
         if instituition:
-            print("\n\nInstituições específicas:\n")
+            print("\n\ninstituições específicas:\n")
             print(json.dumps(instituition, indent=4, ensure_ascii=False)) # print formatado
 
-
-    # # dados de uma coleção por identificador
-    
+    # dados de uma coleção por identificador
     elif args.command == "collection":
         collection = specieslink.get_collection_data(acronym=args.acronym, id=args.id, lang=args.lang)
         if collection:
-            print("\n\nColeções específicas:\n")
+            print("\n\ncoleções específicas:\n")
             print(json.dumps(collection, indent=4, ensure_ascii=False)) # print formatado 
 
-    # # dados de um conjunto de dados com um identificador especifico
-
+    # dados de um conjunto de dados com um identificador especifico
     elif args.command == "dataset":
         dataset = specieslink.get_dataset_info(id=args.id)
         if dataset:
-            print("\n\nConjunto de dados específicos:\n")
+            print("\n\nconjunto de dados específicos:\n")
             print(json.dumps(dataset, indent=4, ensure_ascii=False)) # print formatado
 
-    # # registros filtrados
-
+    # registros filtrados
     elif args.command == "records":
         filters = {} # dicionário de filtros
         for item in args.filters: # para cada filtro adicionado
@@ -137,11 +118,12 @@ def main():
 
         records = specieslink.search_records(filters=filters)
         if records:
-            print("\n\nRegistros filtrados:\n")
+            print("\n\nregistros filtrados:\n")
             # print(json.dumps(records, indent=4, ensure_ascii=False)) # print formatado, descomente para ver no terminal. NÃO RECOMENDADO SE FOR UMA PESQUISA COM MUITOS RESULTADOS
             
             specieslink.insert_into_mysql(records, db_config, table=args.table)     
 
+    # consulta SQL
     elif args.command == "export":
         filters = {}  # dicionário de filtros
         for item in args.filters:  # para cada filtro adicionado
@@ -150,6 +132,7 @@ def main():
 
         specieslink.export_to_csv(filters=filters, db_config=db_config, table=args.table, columns=args.columns, output_csv_path=args.output_csv_path)
 
+    # atualizar o banco
     elif args.command == "update":
         filters = {}  # dicionário de filtros
         for item in args.filters:  # para cada filtro adicionado
@@ -164,4 +147,4 @@ def main():
         specieslink.update_records(filters=filters, update_values=update_values, db_config=db_config, table=args.table)
 
 if __name__ == "__main__":
-    main()
+    main() 
