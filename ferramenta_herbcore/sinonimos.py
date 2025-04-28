@@ -1,6 +1,7 @@
+import argparse
 import os
-os.environ["R_HOME"] = r"C:\\Program Files\\R\\R-4.4.2" 
-os.environ["PATH"] = r"C:\\Program Files\\R\\R-4.4.2\\bin\\x64" + ";" + os.environ["R_HOME"] 
+os.environ["R_HOME"] = r"C:\\Program Files\\R\\R-4.4.2" # alterar caso nao seja o mesmo para o usuario
+os.environ["PATH"] = r"C:\\Program Files\\R\\R-4.4.2\\bin\\x64" + ";" + os.environ["R_HOME"] # alterar caso nao seja o mesmo para o usuario
 
 import re # pra mexer na string
 import csv # auto-explicativo
@@ -8,18 +9,9 @@ import rpy2.robjects as robjects # mexer com r a partir do python
 from rpy2.robjects.packages import importr # importar pacotes r pro python
 from rpy2.robjects.vectors import StrVector # importar o vetor r
 
-txt_file = 'plantas_exemplo.txt'  # txt de entrada
-csv_file = 'csv_exemplo.csv'  # csv de saída
-result_txt_file = 'resultado.txt' # txt de saída
-
-input_txt = "input.txt"  # pra filtragem dos campos relevantes
-output_txt = "output.txt"
-
-robjects.r('Sys.setlocale("LC_ALL", "en_US.UTF-8")')
-
 # le txt e extrai o nome das plantas
 def extract_plants_from_txt(txt_file):
-    with open(txt_file, 'r') as file:
+    with open(txt_file, 'r', encoding='utf-8') as file:
         content = file.read()
     
     # extraindo plantas entre as aspas
@@ -28,7 +20,10 @@ def extract_plants_from_txt(txt_file):
 
 # salva a lista de plantas em um arquivo CSV
 def save_plants_to_csv(plant_names, csv_file):
-    with open(csv_file, 'w') as file:
+    with open(csv_file, 'w', encoding='utf-8') as file:
+        if not plant_names:
+            print("lista vazia\n")
+            return
         # escrevendo cada planta no formato com vírgula e quebra de linha após cada uma
         for name in plant_names[:-1]: # pra todos os nomes menos o ultimo
             file.write(f'"{name}",\n')  # para todos, coloca vírgula e quebra de linha
@@ -36,7 +31,7 @@ def save_plants_to_csv(plant_names, csv_file):
 
 # lê os nomes das plantas do csv
 def read_plants_from_csv(csv_file):
-    with open(csv_file, 'r') as file:
+    with open(csv_file, 'r', encoding='utf-8') as file:
         reader = csv.reader(file)
         # remove aspas e extrai os nomes das plantas
         plants = [row[0].strip('"') for row in reader]
@@ -59,7 +54,7 @@ def perform_lcvp_fuzzy_search(csv_file, max_distance=0.1): # distancia maxima di
 
 # salva o resultado do R em um arquivo TXT com alinhamento visual
 def save_result_to_txt_aligned(result_df, output_file):
-    with open(output_file, 'w') as file:
+    with open(output_file, 'w', encoding='utf-8') as file:
         columns = list(result_df.colnames) # extraindo as colunas do data frame R e converte pra uma lista do python
         
         # pra cada coluna, pega o seu nome e o dado de maior valor, e o tamanho da coluna vai ser determinado por qual for maior entre os dois
@@ -81,15 +76,35 @@ def save_result_to_txt_aligned(result_df, output_file):
             formatted_row = '  '.join(str(val).ljust(max_widths[i]) for i, val in enumerate(row))
             file.write(formatted_row + '\n')
 
-# DESCOMENTE O QUE FOR NECESSÁRIO
+def main():
+    parser = argparse.ArgumentParser(description='interface dos métodos para análise do nome científico')
+    subparsers = parser.add_subparsers(dest='command', help='método a ser executado')    
 
-# plant_names = extract_plants_from_txt(txt_file)
+    extract = subparsers.add_parser("extract", help="extrair nomes do txt em salvar em csv")
+    extract.add_argument("--txt", dest="txt_file", required=True, help="arquivo txt de entrada")
+    extract.add_argument("--csv", dest="csv", required=True, help="arquivo txt de saída")
 
-# save_plants_to_csv(plant_names, csv_file)
+    fuzzy = subparsers.add_parser("fuzzy", help="busca fuzzy no R com base nos nomes do csv")
+    fuzzy.add_argument("--csv", required=True, help="arquivo csv de entrada")
+    fuzzy.add_argument("--output", required=True, help="arquivo txt de saída com resultado")
+    fuzzy.add_argument("--max_distance", type=float, default=0.1, help="distância máxima para verificação fuzzy (valor recomendado: 0.1)")
 
-# print("executando lcvp_fuzzy_search no R...")
-# result = perform_lcvp_fuzzy_search(csv_file)
-# print(result)
+    args = parser.parse_args()
 
-# save_result_to_txt_aligned(result, result_txt_file)
-# print(f"resultado salvo em: {result_txt_file}")
+    # extrair nomes do txt em salvar em csv
+    if args.command == "extract":
+        print("\nextraindo o nome das plantas")
+        extract = extract_plants_from_txt(args.txt_file)
+        save_plants_to_csv(extract, args.csv)
+        print(f"resultado salvo em {args.csv}\n")
+
+    # busca fuzzy no R com base nos nomes do csv
+    elif args.command == "fuzzy":
+        print("\nexecutando busca fuzzy no R")
+        fuzzy = perform_lcvp_fuzzy_search(args.csv, max_distance=args.max_distance)
+        save_result_to_txt_aligned(fuzzy, args.output)
+        print(f"resultado salvo em: {args.output}\n")
+
+if __name__ == "__main__":
+    main()
+
