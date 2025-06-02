@@ -30,6 +30,8 @@ def main():
         interactive_mode()
         return  # sai da função main() para evitar executar argparse depois
 
+    print("ATENÇÃO: PARA EXECUTAR MÉTODOS RELACIONADOS À COLETA DE URLS E IMAGENS, DEVE-SE SEGUIR PELO [1] PASSO-A-PASSO, OU EXECUTAR POR SI PRÓPRIO O CÓDIGO NO REPOSITÓRIO INFORMADO NO README.")
+
     # caso queira executar sozinho, vai pro parser normal, argumentos pelo terminal
     parser = argparse.ArgumentParser(description='interface dos métodos da ferramenta')
     subparsers = parser.add_subparsers(dest="command", help="método a ser executado") # subparsers permitem que métodos utilizem de argumentos diferentes e serem chamados ou não

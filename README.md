@@ -92,6 +92,8 @@ positional arguments:
     records             registros filtrados
     export              realiza uma consulta SQL e retorna um CSV
     update              atualiza registros do banco baseado em parâmetros
+    urls                urls a se obter através de downloader-specieslink-master
+    dezoomify_rs        imagens a se obter das urls através de downloader-specieslink-master
 ```
 
 ```python sinonimos.py -h``` lhe mostrará o seguinte:
@@ -127,6 +129,7 @@ python ferramenta.py dataset --id "8"
 python ferramenta.py records --filters family=piperaceae barcode="FURB38192" --table tabela_exemplo
 python ferramenta.py export --filters family=piperaceae --table tabela_exemplo --colums "coluna_exemplo" --output_csv_path resultados.csv
 python ferramenta.py update --filters stateprovince="São Paulo" --update_values="Santa Catarina" --table tabela_exemplo
+Não há uso do comando urls e dezoomify_rs de maneira direta, somente através da ferramenta interativa, no item "[4] imagens das exsicatas". Para execução direta, recomenda-se o uso direto desse código, contido no repositório citado neste mesmo README.
 
 # exemplos de sinonimos.py:
 python sinonimos.py extract --txt teste-08-04.txt --csv aaa.csv
@@ -134,3 +137,6 @@ python sinonimos.py fuzzy --csv aaa.csv --output ccc.txt --max_distance 0.1
 python sinonimos.py fuzzy --csv aaa.csv --output ccc.txt (max_distance é opcional!)
 python sinonimos.py fuzzy_line --csv teste.csv --tabela registros_biodiversidade --coluna scientificname_NOVO --status status_plantas --max_distance 0.1
 ```
+## Agradecimentos
+
+Deixo descrito nessa seção a minha gratidão ao [Alexandre Yuji Kajihara](https://github.com/xaaaandao), criador dos métodos contidos em downloader-specieslink-master. Com sua permissão, adicionei o seu código nessa ferramenta assim deixando-a mais completa, sem contar o auxílio recebido pelo caminho. Obrigado.

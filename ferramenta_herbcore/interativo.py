@@ -6,11 +6,8 @@ from config import get_config, ask_for_missing_values
 
 from sinonimos import extract_plants_from_txt, save_plants_to_csv, perform_lcvp_fuzzy_search, perform_lcvp_fuzzy_search_per_line, save_result_to_txt_aligned
 from rpy2.robjects.packages import importr
-# stats = importr('stats')
 
-# from downloader_specieslink_master import main as run_crawler
-from downloader_specieslink_master.main import run_crawler
-
+import subprocess
 
 def interactive_mode():
     print("\nbem-vindo ao modo interativo!")
@@ -276,7 +273,7 @@ def interactive_mode():
                     if finalizar == "N":
                         break
 
-        elif choice == "4":
+        if choice == "4":
             print("[1] obtenção das urls a partir dos códigos de barra")
             print("[2] obtenção das imagens a partir das urls")
 
@@ -284,14 +281,28 @@ def interactive_mode():
 
             if choice6 == "1":
                 familia = input("informe o nome da família das plantas para salvar o arquivo de saída: ").strip()
+                csv = input("informe o caminho para o arquivo CSV (com a coluna 'barcode'): ").strip()
                 try:
                     print(f"\nexecutando crawler para a família '{familia}' com coleta de URLs...\n")
-                    run_crawler(familia, images=True)
+                    subprocess.run([f'python', 'downloader-specieslink-master/main.py', '--familia', familia, '--csv', csv])
                     print("\ncoleta de URLs concluída com sucesso.\n")
                 except Exception as e:
                     print(f"\nocorreu um erro ao executar o crawler: {e}\n")
+                finalizar = input("\nexecutar outro método?\n[S] sim\n[N] não\n").strip()
+                if finalizar == "N":
+                    break
 
-                finalizar = input("\nexecutar outro método?\n[S] sim\n[N] não\natenção: é case-sensitive\n").strip()
+            elif choice6 == "2":
+                csv = input("caminho para o CSV com URLs gerado no passo anterior: ").strip()
+                output_imagens = input("diretório de saída das imagens (vai criar se não tiver): ").strip()
+                try:
+                    print(f"\nexecutando download das imagens para saída em '{output_imagens}'...\n")
+                    print("<!!!> ATENÇÃO: PROCESSO DEMORADO - PODE DEMORAR DIAS! <!!!>")
+                    subprocess.run(['python', 'downloader-specieslink-master/use-dezoomify-rs.py', '--input', csv, '--output', output_imagens])
+                    print("\ndownload das imagens concluído com sucesso.\n")
+                except Exception as e:
+                    print(f"\nocorreu um erro ao baixar imagens: {e}\n")
+                finalizar = input("\nexecutar outro método?\n[S] sim\n[N] não\n").strip()
                 if finalizar == "N":
                     break
 
