@@ -101,7 +101,8 @@ interface dos métodos para análise do nome científico
 positional arguments:
   {extract,fuzzy}  método a ser executado
     extract        extrair nomes do txt em salvar em csv
-    fuzzy          busca fuzzy no R com base nos nomes do csv
+    fuzzy          busca e visualização de txt fuzzy com base nos nomes do csv
+    fuzzy_line     atualização no banco de dados fuzzy linha-a-linha com base nos nomes do csv
 ```
 
 Procurar por algo mais específico, como os parâmetros dos métodos demonstrados acima, requer que você especifique o método quando der o comando de ajuda.
@@ -131,4 +132,5 @@ python ferramenta.py update --filters stateprovince="São Paulo" --update_values
 python sinonimos.py extract --txt teste-08-04.txt --csv aaa.csv
 python sinonimos.py fuzzy --csv aaa.csv --output ccc.txt --max_distance 0.1 
 python sinonimos.py fuzzy --csv aaa.csv --output ccc.txt (max_distance é opcional!)
+python sinonimos.py fuzzy_line --csv teste.csv --tabela registros_biodiversidade --coluna scientificname_NOVO --status status_plantas --max_distance 0.1
 ```

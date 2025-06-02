@@ -4,9 +4,13 @@ import sys
 from main_f import species_link
 from config import get_config, ask_for_missing_values
 
-from sinonimos import extract_plants_from_txt, save_plants_to_csv, perform_lcvp_fuzzy_search, save_result_to_txt_aligned
+from sinonimos import extract_plants_from_txt, save_plants_to_csv, perform_lcvp_fuzzy_search, perform_lcvp_fuzzy_search_per_line, save_result_to_txt_aligned
 from rpy2.robjects.packages import importr
 # stats = importr('stats')
+
+# from downloader_specieslink_master import main as run_crawler
+from downloader_specieslink_master.main import run_crawler
+
 
 def interactive_mode():
     print("\nbem-vindo ao modo interativo!")
@@ -31,7 +35,7 @@ def interactive_mode():
         print("[1] informações sobre os dados")
         print("[2] filtragens e consultas no banco")
         print("[3] verificação do nome científico")
-        print("[4] imagens das exsicatas") # TO-DO
+        print("[4] imagens das exsicatas") 
         print("[5] sair") 
 
         choice = input("\ndigite o número da opção: ").strip()
@@ -54,7 +58,7 @@ def interactive_mode():
                 metadata = specieslink.get_metadata(name=name, id=id_)
                 if metadata:
                     print("metadados básicos:\n")
-                    print(json.dumps(metadata, indent=4, ensure_ascii=False))  # exibe os metadados formatados
+                    print(json.dumps(metadata, indent=4, ensure_ascii=False))  # Exibe os metadados formatados
                     finalizar = input("\nexecutar outro método?\n[S] sim\n[N] não\natenção: é case-sensitive\n").strip()
                     if finalizar == "N":
                         break
@@ -222,33 +226,74 @@ def interactive_mode():
                     break
 
             elif choice4 == "2":
-                csv = input("informe o nome para o arquivo csv de entrada com o nome científico das plantas: ").strip()
-                txt = input("informe o arquivo txt de saída com a pesquisa no Leipzig: ").strip()
-                max_distance = input("informe a margem de erro máxima para erros gramaticais e afina (padrão 0.1): ").strip()
-                if max_distance:
-                    try:
-                        max_distance = float(max_distance)
-                        print(f"executando sinonimos.perform_lcvp_fuzzy_search(--csv {csv} --txt {txt} --max_distance {max_distance})...\n")
-                    except ValueError:
-                        print("valor inválido para margem de erro. usando valor padrão de 0.1\n")
-                        max_distance = 0.1
-                else:
-                    max_distance = 0.1
-                    print(f"executando sinonimos.perform_lcvp_fuzzy_search(--csv {csv} --txt {txt})...\n")
+                print("[1] comparar a lista do csv toda de uma vez e mostrar o resultado em um txt")
+                print("[2] comparar cada nome no csv separadamente, linha por linha, e salvar no banco de dados")
 
-                fuzzy = perform_lcvp_fuzzy_search(csv, max_distance)
-                if fuzzy:
-                    print("\nverificando com o LCVP...")
-                    save_result_to_txt_aligned(fuzzy, txt)
-                    print(f"resultado salvo em {txt}\n")
+                choice5 = input("\ndigite o número da opção: ").strip()
+
+                if choice5 in ["1", "2"]:
+                    csv = input("informe o nome para o arquivo csv de entrada com o nome científico das plantas: ").strip()
+                    max_distance = input("informe a margem de erro máxima para erros gramaticais e afina (padrão 0.1): ").strip()
+                    if max_distance:
+                        try:
+                            max_distance = float(max_distance)
+                            # print(f"executando sinonimos.perform_lcvp_fuzzy_search(--csv {csv} --txt {txt} --max_distance {max_distance})...\n")
+                        except ValueError:
+                            print("valor inválido para margem de erro. usando valor padrão de 0.1\n")
+                            max_distance = 0.1
+                    else:
+                        max_distance = 0.1
+                        # print(f"executando sinonimos.perform_lcvp_fuzzy_search(--csv {csv} --txt {txt})...\n")
+
+                if choice5 == "1":
+                    txt = input("informe o arquivo txt de saída com a pesquisa no Leipzig: ").strip()
+                    print(f"executando sinonimos.perform_lcvp_fuzzy_search(--csv {csv} --txt {txt})...\n")
+                    fuzzy = perform_lcvp_fuzzy_search(csv, max_distance)
+                    if fuzzy:
+                        print("\nverificando com o LCVP...")
+                        save_result_to_txt_aligned(fuzzy, txt)
+                        print(f"resultado salvo em {txt}\n")
+
+                    finalizar = input("\nexecutar outro método?\n[S] sim\n[N] não\natenção: é case-sensitive\n").strip()
+                    if finalizar == "N":
+                        break
+
+                if choice5 == "2":
+                    tabela = input("informe o nome da tabela que contém o nome científico ATUAL das plantas: ").strip()
+                    coluna = input("informe o nome da coluna PRÉ-CRIADA que armazenará o NOVO nome científico das plantas: ").strip()
+                    status = input("informe o nome da coluna PRÉ-CRIADA que armazenará o status do nome científico ATUAL das plantas: ").strip()
+                    specieslink = species_link(api_key=api_key)
+
+                    print(f"executando sinonimos.perform_lcvp_fuzzy_search_per_line(--csv {csv} --tabela {tabela} --coluna {coluna} --status {status})...\n")
+                    
+                    fuzzy_line = perform_lcvp_fuzzy_search_per_line(
+                        csv_file=csv, db_config=db_config, tabela=tabela, coluna=coluna, specieslink=specieslink, status=status, max_distance=max_distance
+                    )
+                    if fuzzy_line:
+                        print("\nverificando com o LCVP...")
+
+                    finalizar = input("\nexecutar outro método?\n[S] sim\n[N] não\natenção: é case-sensitive\n").strip()
+                    if finalizar == "N":
+                        break
+
+        elif choice == "4":
+            print("[1] obtenção das urls a partir dos códigos de barra")
+            print("[2] obtenção das imagens a partir das urls")
+
+            choice6 = input("\ndigite o número da opção: ").strip()
+
+            if choice6 == "1":
+                familia = input("informe o nome da família das plantas para salvar o arquivo de saída: ").strip()
+                try:
+                    print(f"\nexecutando crawler para a família '{familia}' com coleta de URLs...\n")
+                    run_crawler(familia, images=True)
+                    print("\ncoleta de URLs concluída com sucesso.\n")
+                except Exception as e:
+                    print(f"\nocorreu um erro ao executar o crawler: {e}\n")
 
                 finalizar = input("\nexecutar outro método?\n[S] sim\n[N] não\natenção: é case-sensitive\n").strip()
                 if finalizar == "N":
-                   break
-
-        elif choice == "4":
-            # TO-DO
-            break
+                    break
 
         elif choice == "5":
             print("saindo do modo interativo...")
