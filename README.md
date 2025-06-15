@@ -12,12 +12,13 @@ Ferramenta separada em cinco arquivos diferentes:
 - interativo.py: versão interativa e incremental da ferramenta - execução de métodos, relacionados ao banco de dados/speciesLink/leipzig, fornecendo seus argumentos passo-a-passo;
 - main_f.py: desenvolvimento dos métodos do banco de dados/speciesLink;
 - sinonimos.py: versão direta da verificação dos sinônimos dos nomes científicos fornecidos a partir do [catálogo de Leipzig](https://www.nature.com/articles/s41597-020-00702-z).
-
-
+- deduplicacao.py: versão direta para o método de rankeamento dos autores de nomes científicos de registros.
 
 
 Utilize do crawler encontrado [aqui](https://github.com/xaaaandao/downloader-specieslink/tree/master) para conseguir as URLs e as imagens.
 Leia mais sobre o catálogo de Leipzig e o lcvplants [aqui](https://github.com/idiv-biodiversity/lcvplants).
+
+Instale o dezoomify-rs 2.12.3[aqui](https://github.com/lovasoa/dezoomify-rs/releases/tag/v2.12.3) - DEIXE-O NO DIRETÓRIO ferramenta_herbcore, NÃO EM downloader-specieslink-master!
 
 Obtenha uma chave para a API se cadastrando no species_link [aqui](https://specieslink.net/ws/1.0/)
 
@@ -42,7 +43,8 @@ escolha um método:
 [2] filtragens e consultas no banco
 [3] verificação do nome científico
 [4] imagens das exsicatas
-[5] sair
+[5] autores de nomes científicos confiáveis
+[6] sair
 ```
 Dentro da ferramenta interativa, os métodos estão distribuídos em grupos dentro desses quatro tópicos, o quinto sendo para desistir da consulta. Digitar um número diferente dos propostos retornará o mesmo menu. Por exemplo, ao digitar "1":
 
@@ -136,7 +138,11 @@ python sinonimos.py extract --txt teste-08-04.txt --csv aaa.csv
 python sinonimos.py fuzzy --csv aaa.csv --output ccc.txt --max_distance 0.1 
 python sinonimos.py fuzzy --csv aaa.csv --output ccc.txt (max_distance é opcional!)
 python sinonimos.py fuzzy_line --csv teste.csv --tabela registros_biodiversidade --coluna scientificname_NOVO --status status_plantas --max_distance 0.1
+
+# exemplos de deduplicacao.py:
+python deduplicacao.py deduplica_autores --csv nomes2-15-06.csv --ranking 5 --similar 100
 ```
+
 ## Agradecimentos
 
 Deixo descrito nessa seção a minha gratidão ao [Alexandre Yuji Kajihara](https://github.com/xaaaandao), criador dos métodos contidos em downloader-specieslink-master. Com sua permissão, adicionei o seu código nessa ferramenta assim deixando-a mais completa, sem contar o auxílio recebido pelo caminho. Obrigado.

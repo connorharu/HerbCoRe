@@ -9,6 +9,8 @@ from rpy2.robjects.packages import importr
 
 import subprocess
 
+from deduplicacao import deduplicacao_de_nomes
+
 def interactive_mode():
     print("\nbem-vindo ao modo interativo!")
     print("aqui você será guiado para escolher os métodos e passar os parâmetros necessários.")
@@ -33,7 +35,8 @@ def interactive_mode():
         print("[2] filtragens e consultas no banco")
         print("[3] verificação do nome científico")
         print("[4] imagens das exsicatas") 
-        print("[5] sair") 
+        print("[5] autores de nomes científicos confiáveis")
+        print("[6] sair")
 
         choice = input("\ndigite o número da opção: ").strip()
 
@@ -307,7 +310,36 @@ def interactive_mode():
                     break
 
         elif choice == "5":
+            csv = input("caminho para o CSV com nomes dos autores: ").strip()
+            try:
+                ranking = int(input("quantos autores mais frequentes você quer exibir? ").strip())
+            except ValueError:
+                print("entrada inválida para ranking. usando valor padrão de 5.")
+                ranking = 5
+
+            try:
+                similares = int(input("nível de similaridade fuzzy (0-100%): ").strip())
+                if similares < 0 or similares > 100:
+                    raise ValueError
+            except ValueError:
+                print("entrada inválida para similaridade. usando valor padrão de 90.")
+                similares = 90
+
+            try:
+                from deduplicacao import deduplicacao_de_nomes 
+                print("\nexecutando deduplicação de autores...\n")
+                deduplicacao_de_nomes(csv, ranking, similares)
+                print("\nprocesso concluído com sucesso.\n")
+            except Exception as e:
+                print(f"\nocorreu um erro durante a deduplicação: {e}\n")
+
+            finalizar = input("\nexecutar outro método?\n[S] sim\n[N] não\natenção: é case-sensitive\n").strip()
+            if finalizar == "N":
+                break
+
+        elif choice == "6":
             print("saindo do modo interativo...")
             break
         else:
             print("\nopção inválida, tente novamente.")
+
