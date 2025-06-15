@@ -18,7 +18,7 @@ Ferramenta separada em cinco arquivos diferentes:
 Utilize do crawler encontrado [aqui](https://github.com/xaaaandao/downloader-specieslink/tree/master) para conseguir as URLs e as imagens.
 Leia mais sobre o catálogo de Leipzig e o lcvplants [aqui](https://github.com/idiv-biodiversity/lcvplants).
 
-Instale o dezoomify-rs 2.12.3[aqui](https://github.com/lovasoa/dezoomify-rs/releases/tag/v2.12.3) - DEIXE-O NO DIRETÓRIO ferramenta_herbcore, NÃO EM downloader-specieslink-master!
+Instale o dezoomify-rs 2.12.3 [aqui](https://github.com/lovasoa/dezoomify-rs/releases/tag/v2.12.3) - DEIXE-O NO DIRETÓRIO ferramenta_herbcore, NÃO EM downloader-specieslink-master!
 
 Obtenha uma chave para a API se cadastrando no species_link [aqui](https://specieslink.net/ws/1.0/)
 
@@ -107,6 +107,15 @@ positional arguments:
     extract        extrair nomes do txt em salvar em csv
     fuzzy          busca e visualização de txt fuzzy com base nos nomes do csv
     fuzzy_line     atualização no banco de dados fuzzy linha-a-linha com base nos nomes do csv
+```
+
+```python deduplicacao.py -h``` lhe mostrará o seguinte:
+```
+deduplicação e ranqueamento de autores de nomes científicos.
+
+positional arguments:
+  {deduplica_autores}
+    deduplica_autores  deduplicação fuzzy dos nomes de autores
 ```
 
 Procurar por algo mais específico, como os parâmetros dos métodos demonstrados acima, requer que você especifique o método quando der o comando de ajuda.
