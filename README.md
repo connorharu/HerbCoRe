@@ -109,6 +109,15 @@ positional arguments:
     fuzzy_line     atualização no banco de dados fuzzy linha-a-linha com base nos nomes do csv
 ```
 
+```python deduplicacao.py -h``` lhe mostrará o seguinte:
+```
+ferramenta para identificação fuzzy de taxonomistas confiáveis
+
+positional arguments:
+  {deduplicador}  método a ser executado
+    deduplicador  executar o deduplicador fuzzy de nomes
+```
+
 Procurar por algo mais específico, como os parâmetros dos métodos demonstrados acima, requer que você especifique o método quando der o comando de ajuda.
 Por exemplo, ```python ferramenta.py metadata -h``` lhe mostrará o seguinte:
 ```
@@ -140,7 +149,7 @@ python sinonimos.py fuzzy --csv aaa.csv --output ccc.txt (max_distance é opcion
 python sinonimos.py fuzzy_line --csv teste.csv --tabela registros_biodiversidade --coluna scientificname_NOVO --status status_plantas --max_distance 0.1
 
 # exemplos de deduplicacao.py:
-python deduplicacao.py deduplica_autores --csv nomes2-15-06.csv --ranking 5 --similar 100
+python deduplicacao.py deduplicar_autores deduplicador --csv nomes2-15-06.csv --ranking 5 --similar 100 --txt nome.txt
 ```
 
 ## Agradecimentos

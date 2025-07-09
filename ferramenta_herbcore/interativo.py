@@ -9,7 +9,7 @@ from rpy2.robjects.packages import importr
 
 import subprocess
 
-from deduplicacao import deduplicacao_de_nomes
+from deduplicacao import processar
 
 def interactive_mode():
     print("\nbem-vindo ao modo interativo!")
@@ -311,27 +311,23 @@ def interactive_mode():
 
         elif choice == "5":
             csv = input("caminho para o CSV com nomes dos autores: ").strip()
-            try:
-                ranking = int(input("quantos autores mais frequentes você quer exibir? ").strip())
-            except ValueError:
+            ranking = int(input("quantos autores mais frequentes você quer exibir? ").strip())
+            similar = int(input("nível de similaridade fuzzy (0-100%): ").strip())
+            txt = input("caminho .txt para salvar o resultado dos agrupamentos: ").strip()
+
+            if not ranking:
                 print("entrada inválida para ranking. usando valor padrão de 5.")
                 ranking = 5
+            if similar < 0 or similar > 100:
+                print("entrada inválida, colocando valor padrão de 60%")
+                similar = 60
+            if not txt:
+                print("serão salvos no arquivo deduplicacao.txt")
+                txt = "deduplicacao.txt"
 
-            try:
-                similares = int(input("nível de similaridade fuzzy (0-100%): ").strip())
-                if similares < 0 or similares > 100:
-                    raise ValueError
-            except ValueError:
-                print("entrada inválida para similaridade. usando valor padrão de 90.")
-                similares = 90
-
-            try:
-                from deduplicacao import deduplicacao_de_nomes 
-                print("\nexecutando deduplicação de autores...\n")
-                deduplicacao_de_nomes(csv, ranking, similares)
-                print("\nprocesso concluído com sucesso.\n")
-            except Exception as e:
-                print(f"\nocorreu um erro durante a deduplicação: {e}\n")
+            print("\nexecutando deduplicação de autores...\n")
+            processar(csv, ranking, similar, txt)
+            print("\nprocesso concluído com sucesso.\n")
 
             finalizar = input("\nexecutar outro método?\n[S] sim\n[N] não\natenção: é case-sensitive\n").strip()
             if finalizar == "N":
