@@ -18,6 +18,7 @@ def ask_for_missing_values():
     config['db_password'] = input("informe a senha do banco de dados: ").strip().strip('"')
     config['db_host'] = input("informe o host do banco de dados (exemplo: 127.0.0.1): ").strip().strip('"')
     config['db_schema'] = input("informe o schema do banco de dados: ").strip().strip('"')
+    config['r_home'] = input("informe o caminho da instalação do R (ex: C:\\Program Files\\R\\R-4.4.2): ").strip().strip('"')
 
     save_config(config)
     return config

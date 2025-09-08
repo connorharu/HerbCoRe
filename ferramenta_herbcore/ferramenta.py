@@ -4,12 +4,15 @@ import os
 from main_f import species_link
 from interativo import interactive_mode
 from config import get_config, ask_for_missing_values, save_config
+from sinonimos import setup_r_environment
 
 def main():
     config = get_config()
 
-    if config is None or any(k not in config for k in ['api_key', 'db_user', 'db_password', 'db_host', 'db_schema']):
+    if config is None or any(k not in config for k in ['api_key', 'db_user', 'db_password', 'db_host', 'db_schema', 'r_home']):
         config = ask_for_missing_values()
+
+    setup_r_environment()
 
     api_key = config['api_key']
     db_config = {

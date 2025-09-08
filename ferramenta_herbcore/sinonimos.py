@@ -1,7 +1,15 @@
 import argparse
 import os
-os.environ["R_HOME"] = r"C:\\Program Files\\R\\R-4.4.2" 
-os.environ["PATH"] = r"C:\\Program Files\\R\\R-4.4.2\\bin\\x64" + ";" + os.environ["R_HOME"] 
+
+def setup_r_environment():
+    config = get_config()
+    if not config or 'r_home' not in config:
+        raise RuntimeError("Configuração inválida: r_home não foi definido. Rode ferramenta.py primeiro.")
+
+    r_home = config['r_home']
+
+    os.environ["R_HOME"] = r_home
+    os.environ["PATH"] = os.path.join(r_home, "bin", "x64") + ";" + os.environ.get("PATH", "")
 
 import re # pra mexer na string
 import csv # auto-explicativo
