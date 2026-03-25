@@ -23,7 +23,7 @@ def main(input, output):
             os.makedirs(output, exist_ok=True)
             filename = os.path.join(output, image_code)
             if not os.path.exists(filename):
-                os.system('dezoomify-rs.exe -H Referer: %s %s.jpg -l' % (url, filename))
+                os.system('dezoomify-rs.exe -H Referer: %s "%s.jpg" -l' % (url, filename))
 
 
 if __name__ == "__main__":

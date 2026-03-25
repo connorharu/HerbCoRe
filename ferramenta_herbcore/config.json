@@ -3,6 +3,6 @@
     "db_user": "root",
     "db_password": "root",
     "db_host": "127.0.0.1",
-    "db_schema": "novo_herbario_25",
+    "db_schema": "teste_pipeline",
     "r_home": "C:\\Program Files\\R\\R-4.4.2"
 }
