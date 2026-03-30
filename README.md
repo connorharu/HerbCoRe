@@ -18,7 +18,7 @@ Ferramenta separada em cinco arquivos diferentes:
 Utilize do crawler encontrado [aqui](https://github.com/xaaaandao/downloader-specieslink/tree/master) para conseguir as URLs e as imagens.
 Leia mais sobre o catálogo de Leipzig e o lcvplants [aqui](https://github.com/idiv-biodiversity/lcvplants).
 
-Instale o dezoomify-rs 2.12.3 [aqui](https://github.com/lovasoa/dezoomify-rs/releases/tag/v2.12.3) - DEIXE-O NO DIRETÓRIO ferramenta_herbcore, NÃO EM downloader-specieslink-master!
+Instale o dezoomify-rs 2.12.3 [aqui](https://github.com/lovasoa/dezoomify-rs/releases/tag/v2.12.3) - DEIXE-O NO DIRETÓRIO ferramenta_herbcore, NÃO EM downloader-specieslink-master! O mesmo deve ser feito para o diretório pipeline, caso seja utilizado.
 
 Obtenha uma chave para a API se cadastrando no species_link [aqui](https://specieslink.net/ws/1.0/)
 
@@ -128,6 +128,9 @@ options:
   --name NAME        nome a ser identificado
   --id ID            id a ser identificado
 ```
+
+### Pipeline da ferramenta:
+Siga a execução proposta no pipeline normalmente.
 
 ### Exemplos de uso dos comandos, na ordem dos métodos:
 ```python
