@@ -16,7 +16,7 @@ Ferramenta separada em cinco arquivos diferentes:
 
 
 Utilize do crawler encontrado [aqui](https://github.com/xaaaandao/downloader-specieslink/tree/master) para conseguir as URLs e as imagens.
-Leia mais sobre o catálogo de Leipzig e o lcvplants [aqui](https://github.com/idiv-biodiversity/lcvplants). No entanto, aparenta-se que o método de instalação dos pacotes está desatualizado. Utilize o pacote ```pak``` ao invés de ````devtools```, da seguinte maneira:
+Leia mais sobre o catálogo de Leipzig e o lcvplants [aqui](https://github.com/idiv-biodiversity/lcvplants). No entanto, aparenta-se que o método de instalação dos pacotes está desatualizado. Utilize o pacote ```pak``` ao invés de ```devtools```, da seguinte maneira:
 
 ```
 install.packages("pak")
