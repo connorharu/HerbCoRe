@@ -16,7 +16,13 @@ Ferramenta separada em cinco arquivos diferentes:
 
 
 Utilize do crawler encontrado [aqui](https://github.com/xaaaandao/downloader-specieslink/tree/master) para conseguir as URLs e as imagens.
-Leia mais sobre o catálogo de Leipzig e o lcvplants [aqui](https://github.com/idiv-biodiversity/lcvplants).
+Leia mais sobre o catálogo de Leipzig e o lcvplants [aqui](https://github.com/idiv-biodiversity/lcvplants). No entanto, aparenta-se que o método de instalação dos pacotes está desatualizado. Utilize o pacote ```pak``` ao invés de ````devtools```, da seguinte maneira:
+
+```
+install.packages("pak")
+pak::pak("idiv-biodiversity/LCVP")
+pak::pak("idiv-biodiversity/lcvplants")
+```
 
 Instale o dezoomify-rs 2.12.3 [aqui](https://github.com/lovasoa/dezoomify-rs/releases/tag/v2.12.3) - DEIXE-O NO DIRETÓRIO ferramenta_herbcore, NÃO EM downloader-specieslink-master! O mesmo deve ser feito para o diretório pipeline, caso seja utilizado.
 
