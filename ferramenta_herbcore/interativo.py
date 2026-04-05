@@ -287,7 +287,7 @@ def interactive_mode():
                 csv = input("informe o caminho para o arquivo CSV (com a coluna 'barcode'): ").strip()
                 try:
                     print(f"\nexecutando crawler para a família '{familia}' com coleta de URLs...\n")
-                    subprocess.run([f'python', 'downloader-specieslink-master/main.py', '--familia', familia, '--csv', csv])
+                    subprocess.run([sys.executable, 'downloader-specieslink-master/main.py', '--familia', familia, '--csv', csv])
                     print("\ncoleta de URLs concluída com sucesso.\n")
                 except Exception as e:
                     print(f"\nocorreu um erro ao executar o crawler: {e}\n")
@@ -301,7 +301,7 @@ def interactive_mode():
                 try:
                     print(f"\nexecutando download das imagens para saída em '{output_imagens}'...\n")
                     print("<!!!> ATENÇÃO: PROCESSO DEMORADO - PODE DEMORAR DIAS! <!!!>")
-                    subprocess.run(['python', 'downloader-specieslink-master/use-dezoomify-rs.py', '--input', csv, '--output', output_imagens])
+                    subprocess.run([sys.executable, 'downloader-specieslink-master/use-dezoomify-rs.py', '--input', csv, '--output', output_imagens])
                     print("\ndownload das imagens concluído com sucesso.\n")
                 except Exception as e:
                     print(f"\nocorreu um erro ao baixar imagens: {e}\n")
