@@ -52,7 +52,7 @@ escolha um método:
 [5] autores de nomes científicos confiáveis
 [6] sair
 ```
-Dentro da ferramenta interativa, os métodos estão distribuídos em grupos dentro desses quatro tópicos, o quinto sendo para desistir da consulta. Digitar um número diferente dos propostos retornará o mesmo menu. Por exemplo, ao digitar "1":
+Dentro da ferramenta interativa, os métodos estão distribuídos em grupos dentro desses cinco tópicos, o sexto sendo para desistir da consulta. Digitar um número diferente dos propostos retornará o mesmo menu. Por exemplo, ao digitar "1":
 
 ```
 digite o número da opção: 1 <- número digitado no terminal
@@ -159,6 +159,65 @@ python sinonimos.py fuzzy_line --csv teste.csv --tabela registros_biodiversidade
 
 # exemplos de deduplicacao.py:
 python deduplicacao.py deduplicar_autores deduplicador --csv nomes2-15-06.csv --ranking 5 --similar 100 --txt nome.txt
+```
+## Sobre a pasta classificador:
+Código feito para a separação das imagens anteriormente obtidas em ferramenta_herbcore em tipos, como: exsicatas, imagens da planta viva e outros tipos de imagens, como aproximações do rótulo do herbário. Após a separação manual de um conjunto de treinamento, o modelo é capaz de separar o restante das imagens do acervo, permitindo que o pesquisador poupe tempo ao apenas verificar os resultados do modelo ao invés de ter que separar todas as imagens manualmente.
+
+Ferramenta separada em dois arquivos diferentes:
+- svm2.py: arquivo de código onde são descritos os métodos da ferramenta, explicados abaixo.
+- svm_interativo.py: utilizado para chamar os métodos de svm2.py de forma interativa, assim como feito com ferramenta_herbcore.
+
+## Pré-requisitos:
+- Utilizar de ```requirements.txt``` para instalar os requisitos utilizando o seguinte comando:
+```
+pip install -r requirements.txt
+```
+Caso o ```requirements.txt``` já tenha sido instalado, não é necessário fazer novamente.
+
+## Como usar a ferramenta:
+Ao chamar ```python svm2.py```, ou qualquer comando da ferramenta ininterrupta, o menu no terminal perguntará se o usuário deseja acessar a ferramenta ininterrupta ou a ferramenta interativa. Caso escolha pela ferramenta ininterrupta, siga para o tópico relacionado à execução direta dos comandos, diretamente abaixo do próximo. Caso contrário:
+
+### Ferramenta interativa (passo-a-passo):
+Similarmente ao menu da ferramenta_herbcore, você pode escolher dentre opções de execução:
+
+```
+o que deseja fazer?
+[1] descobrir melhores parâmetros - grid search
+[2] treinar classificador
+[3] testar em um dataset.npy novo (pós treino)
+[4] separação de um acervo em tipos de imagens
+[5] verificação da quantidade de amostras e features
+```
+Para o classificador, não há submenus dentro do menu principal. Acima, os tópicos listados já são os métodos disponíveis da ferramenta. Para uma melhor descrição do funcionamento de cada método, reitera-se a possibilidade de ler a seção da ferramenta ininterrupta, ou fazer ```python svm2.py NOMEDOMÉTODO -h```.
+
+No final da execução, ele pergunta se o usuário deseja executar outro método.
+
+```
+executar outro método?
+[S] sim
+[N] não
+```
+### Ferramenta ininterrupta (execução direta):
+
+A ferramenta te pede um conjunto de comandos pelo terminal para executar o que se pede. Caso desconheça os parâmetros necessários para a busca, você pode usar de ```-h``` e ver os comentários com ajuda adicionados. Recomenda-se ler a seção da ferramenta ininterrupta do ferramenta_herbcore, a fim de entender o funcionamento do guia de ajuda ```-h```.
+
+### Pipeline da ferramenta:
+Ainda sendo desenvolvido!
+
+### Exemplos de uso dos comandos, na ordem dos métodos:
+```python
+
+# treinamento e teste
+python svm2.py dataset_teste --arq1 imagens-saida/f1.npy --arq2 imagens-saida/f2.npy --arq3 imagens-saida/f3.npy --dir_imagens imagens-saida --kernel linear --c 0.1 --folds 5 --novo_arq1 amostragem/f1.npy --novo_arq2 amostragem/f2.npy --novo_arq3 amostragem/f3.npy --matriz 1
+
+# apenas treinamento
+python svm2.py treinamento --arq1 imagens-saida/f1.npy --arq2 imagens-saida/f2.npy --arq3 imagens-saida/f3.npy --dir_imagens imagens-saida --kernel linear --c 0.1 --folds 5 --matriz 1
+
+# separar as imagens em subdiretórios a partir de um treinamento
+python svm2.py organizar --arq1 imagens-saida/f1.npy --arq2 imagens-saida/f2.npy --arq3 imagens-saida/f3.npy --dir_origem "teste/" --dir_destino "teste-org/ --kernel linear --c 0.1"
+
+# vetores de features extraídos
+python svm2.py dimensoes --arq1 imagens-saida/f1.npy --arq2 imagens-saida/f2.npy --arq3 imagens-saida/f3.npy
 ```
 
 ## Agradecimentos
