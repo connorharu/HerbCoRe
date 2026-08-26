@@ -174,10 +174,10 @@ pip install -r requirements.txt
 ```
 Caso o ```requirements.txt``` já tenha sido instalado, não é necessário fazer novamente.
 
-## Como usar a ferramenta:
+## Como usar a ferramenta do classificador:
 Ao chamar ```python svm2.py```, ou qualquer comando da ferramenta ininterrupta, o menu no terminal perguntará se o usuário deseja acessar a ferramenta ininterrupta ou a ferramenta interativa. Caso escolha pela ferramenta ininterrupta, siga para o tópico relacionado à execução direta dos comandos, diretamente abaixo do próximo. Caso contrário:
 
-### Ferramenta interativa (passo-a-passo):
+### Ferramenta do classificador interativa (passo-a-passo):
 Similarmente ao menu da ferramenta_herbcore, você pode escolher dentre opções de execução:
 
 ```
@@ -197,12 +197,12 @@ executar outro método?
 [S] sim
 [N] não
 ```
-### Ferramenta ininterrupta (execução direta):
+### Ferramenta do classificador ininterrupta (execução direta):
 
 A ferramenta te pede um conjunto de comandos pelo terminal para executar o que se pede. Caso desconheça os parâmetros necessários para a busca, você pode usar de ```-h``` e ver os comentários com ajuda adicionados. Recomenda-se ler a seção da ferramenta ininterrupta do ferramenta_herbcore, a fim de entender o funcionamento do guia de ajuda ```-h```.
 
-### Pipeline da ferramenta:
-Ainda sendo desenvolvido!
+### Pipeline da ferramenta do classificador:
+O notebook de pipeline da ferramenta não é capaz de treinar ou validar um modelo, apenas realizar a separação entre tipos de imagem de um herbário entre exsicatas, rótulos e imagens vivas. Para este fim, execute ```separating.ipynb```, que já possui a chamada do modelo e scaler pré-treinados.
 
 ### Exemplos de uso dos comandos, na ordem dos métodos:
 ```python
