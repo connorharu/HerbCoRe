@@ -11,3 +11,9 @@ tcc/
 request+family+Piperaceae+2026+05+20.csv
 tcc.csv
 imagens-saida/
+imagens-saida-resnet/
+model_training.ipynb
+testing.ipynb
+balanceado-saida-ext-resnet/
+balanceado/
+balanced-images/

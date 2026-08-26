@@ -13,3 +13,5 @@ import os
 import shutil
 import pathlib
 import tensorflow as tf
+from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
+import joblib
