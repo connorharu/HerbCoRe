@@ -184,51 +184,103 @@ class inteligencia_artificial:
 
         return f1
 
-    def carregar_modelo_cnn(self, nome_modelo):
-            if nome_modelo == "vgg16":
-                base_model = tf.keras.applications.VGG16(weights='imagenet', include_top=False, pooling='avg')
-                preprocess = tf.keras.applications.vgg16.preprocess_input
-            elif nome_modelo == "resnet50":
-                base_model = tf.keras.applications.ResNet50(weights='imagenet', include_top=False, pooling='avg')
-                preprocess = tf.keras.applications.resnet50.preprocess_input
-            else:
-                raise ValueError("escolha 'vgg16' ou 'resnet50'")
+    # def carregar_modelo_cnn(self, nome_modelo):
+    #         if nome_modelo == "vgg16":
+    #             base_model = tf.keras.applications.VGG16(weights='imagenet', include_top=False, pooling='avg')
+    #             preprocess = tf.keras.applications.vgg16.preprocess_input
+    #         elif nome_modelo == "resnet50":
+    #             base_model = tf.keras.applications.ResNet50(weights='imagenet', include_top=False, pooling='avg')
+    #             preprocess = tf.keras.applications.resnet50.preprocess_input
+    #         else:
+    #             raise ValueError("escolha 'vgg16' ou 'resnet50'")
             
-            return base_model, preprocess
+    #         return base_model, preprocess
+        
+    # def organizar_imagens(self, dir_origem, dir_destino, nome_modelo, target_size=(224, 224)):
+    #         X_scaled = self.scaler.fit_transform(self.X) # treina com os .npy
+    #         self.svm.fit(X_scaled, self.y)
+
+    #         model_cnn, preprocess_input = self.carregar_modelo_cnn(nome_modelo)
+
+    #         classes_map = {0: "f1", 1: "f2", 2: "f3"} # separaçao das pastas f1, f2 e f3
+    #         for folder in classes_map.values():
+    #             os.makedirs(os.path.join(dir_destino, folder), exist_ok=True)
+
+    #         extensoes = ('*.png', '*.jpg', '*.jpeg', '*.PNG', '*.JPG', '*.JPEG')
+    #         arquivos = []
+    #         for ext in extensoes:
+    #             arquivos.extend(pathlib.Path(dir_origem).rglob(ext))
+
+    #         for arquivo in arquivos:
+    #             img = tf.keras.preprocessing.image.load_img(arquivo, target_size=target_size) # carrega imagem
+    #             img_array = tf.keras.preprocessing.image.img_to_array(img)
+    #             img_array = preprocess_input(img_array)
+    #             img_array = np.expand_dims(img_array, axis=0)
+
+    #             feature = model_cnn.predict(img_array, verbose=0) # extrai feature
+                
+    #             feature_scaled = self.scaler.transform(feature) # z-score
+    #             predicao = self.svm.predict(feature_scaled)[0] # prevê
+                
+    #             pasta_escolhida = classes_map[predicao] # copia para a pasta prevista
+    #             destino_final = os.path.join(dir_destino, pasta_escolhida, arquivo.name)
+    #             shutil.copy(str(arquivo), destino_final)
+                
+    #             print(f" {arquivo.name} copiada para /{pasta_escolhida}")
+
+    #         print(f"\norganização concluida. imagens separadas em {dir_destino}")
+
+    def carregar_modelo_cnn(self, nome_modelo):
+        if nome_modelo == "vgg16":
+            base_model = tf.keras.applications.VGG16(weights='imagenet', include_top=False, pooling='avg')
+            preprocess = tf.keras.applications.vgg16.preprocess_input
+        elif nome_modelo == "resnet50v2":
+            base_model = tf.keras.applications.ResNet50V2(weights='imagenet', include_top=False, pooling='avg')
+            preprocess = tf.keras.applications.resnet_v2.preprocess_input
+        elif nome_modelo == "mobilenetv2":
+            base_model = tf.keras.applications.MobileNetV2(weights='imagenet', include_top=False, pooling='avg')
+            preprocess = tf.keras.applications.mobilenet_v2.preprocess_input
+        else:
+            raise ValueError("escolha 'vgg16', 'resnet50v2' ou 'mobilenetv2'")
+        
+        return base_model, preprocess
         
     def organizar_imagens(self, dir_origem, dir_destino, nome_modelo, target_size=(224, 224)):
-            X_scaled = self.scaler.fit_transform(self.X) # treina com os .npy
-            self.svm.fit(X_scaled, self.y)
+        X_scaled = self.scaler.fit_transform(self.X) # treina com os .npy
+        self.svm.fit(X_scaled, self.y)
 
-            model_cnn, preprocess_input = self.carregar_modelo_cnn(nome_modelo)
+        model_cnn, preprocess_input = self.carregar_modelo_cnn(nome_modelo)
 
-            classes_map = {0: "f1", 1: "f2", 2: "f3"} # separaçao das pastas f1, f2 e f3
-            for folder in classes_map.values():
-                os.makedirs(os.path.join(dir_destino, folder), exist_ok=True)
+        classes_map = {0: "f1", 1: "f2", 2: "f3"} # separação das pastas f1, f2 e f3
+        for folder in classes_map.values():
+            os.makedirs(os.path.join(dir_destino, folder), exist_ok=True)
 
-            extensoes = ('*.png', '*.jpg', '*.jpeg', '*.PNG', '*.JPG', '*.JPEG')
-            arquivos = []
-            for ext in extensoes:
-                arquivos.extend(pathlib.Path(dir_origem).rglob(ext))
+        extensoes = ('*.png', '*.jpg', '*.jpeg', '*.PNG', '*.JPG', '*.JPEG')
+        arquivos = []
+        for ext in extensoes:
+            arquivos.extend(pathlib.Path(dir_origem).rglob(ext))
 
-            for arquivo in arquivos:
-                img = tf.keras.preprocessing.image.load_img(arquivo, target_size=target_size) # carrega imagem
-                img_array = tf.keras.preprocessing.image.img_to_array(img)
-                img_array = preprocess_input(img_array)
-                img_array = np.expand_dims(img_array, axis=0)
+        for arquivo in arquivos:
+            # Mantém o carregamento compatível com o script original
+            img = tf.keras.preprocessing.image.load_img(arquivo, target_size=target_size) 
+            img_array = tf.keras.preprocessing.image.img_to_array(img)
+            
+            # Aplica o pré-processamento correto da CNN escolhida
+            img_array = np.expand_dims(img_array, axis=0)
+            img_array = preprocess_input(img_array)
 
-                feature = model_cnn.predict(img_array, verbose=0) # extrai feature
-                
-                feature_scaled = self.scaler.transform(feature) # z-score
-                predicao = self.svm.predict(feature_scaled)[0] # prevê
-                
-                pasta_escolhida = classes_map[predicao] # copia para a pasta prevista
-                destino_final = os.path.join(dir_destino, pasta_escolhida, arquivo.name)
-                shutil.copy(str(arquivo), destino_final)
-                
-                print(f" {arquivo.name} copiada para /{pasta_escolhida}")
+            feature = model_cnn.predict(img_array, verbose=0) # extrai feature
+            
+            feature_scaled = self.scaler.transform(feature) # z-score
+            predicao = self.svm.predict(feature_scaled)[0] # prevê
+            
+            pasta_escolhida = classes_map[predicao] # copia para a pasta prevista
+            destino_final = os.path.join(dir_destino, pasta_escolhida, arquivo.name)
+            shutil.copy(str(arquivo), destino_final)
+            
+            print(f" {arquivo.name} copiada para /{pasta_escolhida}")
 
-            print(f"\norganização concluida. imagens separadas em {dir_destino}")
+        print(f"\norganização concluida. imagens separadas em {dir_destino}")
 
     def verificar_dimensoes(self):
         if self.X is not None:
@@ -274,7 +326,7 @@ def main():
     organizar.add_argument("--arq1", required=True, help="caminho do arquivo .npy da classe 1 (treinamento)")
     organizar.add_argument("--arq2", required=True, help="caminho do arquivo .npy da classe 2 (treinamento)")
     organizar.add_argument("--arq3", required=True, help="caminho do arquivo .npy da classe 3 (treinamento)")
-    organizar.add_argument("--modelo", choices=['vgg16', 'resnet50'], default='vgg16', help="arquitetura da CNN para extrair features - use a mesma utilizada na extração do treinamento")
+    organizar.add_argument("--modelo", choices=['vgg16', 'resnet50v2'], default='vgg16', help="arquitetura da CNN para extrair features - use a mesma utilizada na extração do treinamento")
     organizar.add_argument("--kernel", default="linear", help="kernel (ex: linear, rbf, poly)")
     organizar.add_argument("--c", type=float, default=1.0, help="margem de erro C")
     organizar.add_argument("--dir_origem", required=True, help="diretório onde estão as imagens misturadas")
@@ -322,7 +374,7 @@ def main():
             ia = inteligencia_artificial(args.arq1, args.arq2, args.arq3, args.kernel, args.c)
             ia.carregar_dados()
             ia.set_svm()
-            ia.organizar_imagens(args.dir_origem, args.dir_destino, nome_modelo=args.modelo)
+            ia.organizar_imagens(args.dir_origem, args.dir_destino, nome_modelo=args.modelo, target_size=(224, 224))
     elif args.command == "dimensoes":
             ia = inteligencia_artificial(args.arq1, args.arq2, args.arq3)
             ia.carregar_dados()

@@ -84,13 +84,13 @@ def interactive_mode():
             dir_destino = input("diretório de saída (onde criar f1, f2, f3): ").strip()
             kernel = input("kernel (ex: linear, rbf, poly): ").strip() or "linear"
             c = float(input("margem de erro C: ") or 1.0)
-            modelo = input("modelo CNN (vgg16 ou resnet50 - use o mesmo do treinamento): ").strip() or "vgg16"
+            modelo = input("modelo CNN (vgg16 ou resnet50v2 - use o mesmo do treinamento): ").strip() or "vgg16"
 
             ia = inteligencia_artificial(arq1, arq2, arq3, kernel, c)
             ia.carregar_dados()
             ia.set_svm()
             
-            ia.organizar_imagens(dir_origem, dir_destino, nome_modelo=modelo)
+            ia.organizar_imagens(dir_origem, dir_destino, nome_modelo=modelo, target_size=(224,224))
 
             finalizar = input("\nexecutar outro método?\n[S] sim\n[N] não\n").strip().upper()
             if finalizar == "N":

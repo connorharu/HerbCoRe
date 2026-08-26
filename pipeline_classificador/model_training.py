@@ -37,7 +37,7 @@ def grid_search(X=None, y=None, arq1=None, arq2=None, arq3=None):
     return gridSearch
 
 def set_svm(kernel, c):
-    return SVC(kernel=best_kernel, C=best_c)
+    return SVC(kernel=kernel, C=c)
 
 # the model used in the following training is simply used to demonstrate the f1-score this model is capable of reaching.
 # considering the way the cross validation works, taking in account we are using
@@ -150,8 +150,8 @@ def image_organizing(origin_folder, destiny_folder, target_size=(224, 224)):
         scaler = joblib.load('svm_scaler.joblib')
         svm_model = joblib.load('svm_model.joblib')
 
-        model_cnn = ResNet50(weights='imagenet', include_top=False, pooling='avg')
-        preprocess_input = tf.keras.applications.resnet50.preprocess_input
+        model_cnn = tf.keras.applications.ResNet50V2(weights='imagenet', include_top=False, pooling='avg')
+        preprocess_input = tf.keras.applications.resnet_v2.preprocess_input
 
         classes_map = {0: "f1", 1: "f2", 2: "f3"}
         for folder in classes_map.values():
