@@ -4,7 +4,7 @@ import os
 def setup_r_environment():
     config = get_config()
     if not config or 'r_home' not in config:
-        raise RuntimeError("Configuração inválida: r_home não foi definido. Rode ferramenta.py primeiro.")
+        raise RuntimeError("Configuração inválida: r_home não foi definido. Rode tool.py primeiro.")
 
     r_home = config['r_home']
 

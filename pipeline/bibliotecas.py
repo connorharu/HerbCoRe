@@ -12,7 +12,7 @@ import shutil
 
 diretorio = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(diretorio)
-ferramenta_path = os.path.join(parent_dir, 'ferramenta_herbcore')
+ferramenta_path = os.path.join(parent_dir, 'herbcore_tool')
 if ferramenta_path not in sys.path:
     sys.path.append(ferramenta_path)
 
