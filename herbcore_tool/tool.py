@@ -4,7 +4,7 @@ import os
 from main_f import species_link
 from interactive import interactive_mode
 from config import get_config, ask_for_missing_values, save_config
-from sinonimos import setup_r_environment
+from synonym import setup_r_environment
 
 def main():
     config = get_config()

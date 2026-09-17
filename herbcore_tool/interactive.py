@@ -4,7 +4,7 @@ import sys
 from main_f import species_link
 from config import get_config, ask_for_missing_values
 
-from sinonimos import extract_plants_from_txt, save_plants_to_csv, perform_lcvp_fuzzy_search, perform_lcvp_fuzzy_search_per_line, save_result_to_txt_aligned
+from synonym import extract_plants_from_txt, save_plants_to_csv, perform_lcvp_fuzzy_search, perform_lcvp_fuzzy_search_per_line, save_result_to_txt_aligned
 from rpy2.robjects.packages import importr
 
 import subprocess
