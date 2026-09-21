@@ -1,4 +1,4 @@
-from bibliotecas import *
+from library import *
 
 ## Model training
 #This file exists solely to allow the model on "testing" to function without the need of the user training it themselves. It contains its training parameters, such as grid search parameters, and f1-score results.
@@ -45,7 +45,7 @@ def set_svm(kernel, c):
 # and therefore, if this model was the one saved for posterior use,
 # it wouldn't have our whole dataset embebbed in it.
 
-def avaliar_modelo(X, y, arq1, arq2, arq3, n_splits=5, dir_images=None, matriz=False):
+def assess_model(X, y, arq1, arq2, arq3, n_splits=5, dir_images=None, matriz=False):
     svm = set_svm(best_kernel, best_c)
     seed = random.randint(0, 10000)
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=seed)
@@ -88,48 +88,44 @@ def avaliar_modelo(X, y, arq1, arq2, arq3, n_splits=5, dir_images=None, matriz=F
 
         error_reports(y_test, y_pred, test_idx, len_f1, len_f2, len_f3, dir_images)
 
-    media_f1 = np.mean(f1_folds)
-    desvio_f1 = np.std(f1_folds)
+    avg_f1 = np.mean(f1_folds)
+    deviation_f1 = np.std(f1_folds)
 
-    print(f"average f1: {(media_f1):.4f}")
+    print(f"average f1: {(avg_f1):.4f}")
     print(f"standard deviation: {np.std(f1_folds):.4f}")
 
     if(matriz):
         confusion_matrixx(y_true_all, y_pred_all, labels_class=["Exsiccatae", "Labels", "Live plants"])
 
-    return media_f1, desvio_f1
+    return avg_f1, deviation_f1
 
 def error_reports(y_test, y_pred, test_idx, len_f1, len_f2, len_f3, dir_images):
-    erros = np.where(y_pred != y_test)[0] # onde a predição foi diferente do valor real
+    erros = np.where(y_pred != y_test)[0] 
 
     if(erros.size > 0):
         # print("samples classifed incorrectly:")
-        for i in erros: # para cada erro
-            global_idx = test_idx[i] # índice original (ordem numérica nas pastas)
-            true_label = y_test[i] # rótulo real
-            pred_label = y_pred[i] # rótulo predito pela svm
+        for i in erros: 
+            global_idx = test_idx[i] 
+            true_label = y_test[i]
+            pred_label = y_pred[i] 
 
-            # de qual classe veio a amostra
-            if global_idx < len_f1: # primeira classe
+            if global_idx < len_f1: 
                 classe_real = "f1"
-            elif global_idx < len_f1 + len_f2: # segunda classe
+            elif global_idx < len_f1 + len_f2:
                 classe_real = "f2"
-            else: # terceira classe
+            else: 
                 classe_real = "f3"
 
-            if dir_images: # diretório informado
-                pasta_classe = os.path.join(dir_images, "images", "tf.keras", classe_real) # caminho da pasta
-                arquivos = glob.glob(os.path.join(pasta_classe, "*.jpg")) # lista todos os arquivos da pasta
+            if dir_images: 
+                class_folder = os.path.join(dir_images, "images", "tf.keras", classe_real) 
+                files = glob.glob(os.path.join(class_folder, "*.jpg")) 
 
-                if arquivos: # encontrou arquivos
-                    caminho = arquivos[global_idx % len(arquivos)]  # pega um arquivo da classe
-                    # print(f"  [label era {true_label} ({classe_real}) - predizeu {pred_label} (0=f1, 1=f2, 2=f3)], imagem:  {caminho}")
-                else: # não encontrou arquivos
-                    # print(f"  [label era {true_label} ({classe_real}) - predizeu {pred_label} (0=f1, 1=f2, 2=f3)], nenhuma imagem encontrada")
+                if files: 
+                    path = files[global_idx % len(files)] 
+                else: 
                     pass
-            else: # diretório não foi informado, usa posição global dentro das pastas
+            else: 
                 pass
-                # print(f"  [label era {true_label} - predizeu {pred_label} (0=f1, 1=f2, 2=f3)], sem diretório, índice {global_idx}")
 
 def confusion_matrixx(y_true, y_pred, labels_class=None):
     cm = confusion_matrix(y_true, y_pred)
@@ -157,27 +153,27 @@ def image_organizing(origin_folder, destiny_folder, target_size=(224, 224)):
         for folder in classes_map.values():
             os.makedirs(os.path.join(destiny_folder, folder), exist_ok=True)
 
-        extensoes = ('*.png', '*.jpg', '*.jpeg', '*.PNG', '*.JPG', '*.JPEG')
-        arquivos = []
-        for ext in extensoes:
-            arquivos.extend(pathlib.Path(origin_folder).rglob(ext))
+        extensions = ('*.png', '*.jpg', '*.jpeg', '*.PNG', '*.JPG', '*.JPEG')
+        files = []
+        for ext in extensions:
+            files.extend(pathlib.Path(origin_folder).rglob(ext))
 
-        for arquivo in arquivos:
-            img = tf.keras.preprocessing.image.load_img(arquivo, target_size=target_size) # carrega imagem
+        for file in files:
+            img = tf.keras.preprocessing.image.load_img(file, target_size=target_size) 
             img_array = tf.keras.preprocessing.image.img_to_array(img)
             img_array = preprocess_input(img_array)
             img_array = np.expand_dims(img_array, axis=0)
 
-            feature = model_cnn.predict(img_array, verbose=0) # extrai feature
+            feature = model_cnn.predict(img_array, verbose=0)
             
             feature_scaled = scaler.transform(feature) # z-score
-            predicao = svm_model.predict(feature_scaled)[0] # prevê
+            prediction = svm_model.predict(feature_scaled)[0] 
             
-            pasta_escolhida = classes_map[predicao] # copia para a pasta prevista
-            destino_final = os.path.join(destiny_folder, pasta_escolhida, arquivo.name)
-            shutil.copy(str(arquivo), destino_final)
+            choosen_folder = classes_map[prediction] 
+            destino_final = os.path.join(destiny_folder, choosen_folder, file.name)
+            shutil.copy(str(file), destino_final)
             
-            print(f" {arquivo.name} copied to /{pasta_escolhida}")
+            print(f" {file.name} copied to /{choosen_folder}")
 
         print(f"\norganizing concluded. separated images are in {destiny_folder}")
 
@@ -189,7 +185,7 @@ best_c = better_params['C']
 
 X, y = load_data('imagens-saida-resnet/f1.npy', 'imagens-saida-resnet/f2.npy', 'imagens-saida-resnet/f3.npy')
 
-media, desvio = avaliar_modelo(X=X, y=y, arq1='imagens-saida-resnet/f1.npy', arq2='imagens-saida-resnet/f2.npy', arq3='imagens-saida-resnet/f3.npy', dir_images='imagens-saida-resnet', matriz=False)
+media, desvio = assess_model(X=X, y=y, arq1='imagens-saida-resnet/f1.npy', arq2='imagens-saida-resnet/f2.npy', arq3='imagens-saida-resnet/f3.npy', dir_images='imagens-saida-resnet', matriz=False)
 
 # saving the model for future use
 scaler_f = StandardScaler()
