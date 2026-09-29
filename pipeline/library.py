@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import sys
 import mysql.connector as mysql_conn
 import matplotlib.pyplot as plt
