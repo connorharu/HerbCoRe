@@ -1,6 +1,11 @@
 # HerbCoRe
 A cataloging of HerbCoRe: a tool for selecting and filtering plant-related datasets from herbariums, developed with the assistance of Professor André Luis Schwerz.
 
+## Release
+PT-BR: HerbCoRe-WCAMA é a ferramenta no estado em que foi publicada no Workshop de Computação Aplicada à Gestão do Meio Ambiente e Recursos (WCAMA), realizado no Congresso da Sociedade Brasileira de Computação, edição de 2026, do dia 19 a 23 de julho. [Artigo publicado](https://sol.sbc.org.br/index.php/wcama/article/view/43421) na SBC Open Lib. Nela, a ferramenta está totalmente em português. Mantida nessa release para fácil acesso.
+
+EN: HerbCoRe-WCAMA is the tool in the state it was published at the Workshop on Computing Applied to Environmental and Resource Management (WCAMA), held during the 2026 Brazilian Computer Society Congress, from 19 to 23 of July. [Article Published](https://sol.sbc.org.br/index.php/wcama/article/view/43421) in the SBC Open Lib. In this version, the tool is entirely in Portuguese. It is maintained in this release for easy access.
+
 ## About the folder herbcore_tool:
 Code designed to query metadata, such as types, lists, or collection and/or institution data, as well as information about a dataset, via the speciesLink API. It allows for filtering biodiversity records to retrieve more specific data, and the result set has no size limit.
 
