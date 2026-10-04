@@ -1,8 +1,8 @@
-USE novo_herbario;
+USE new_herbarium;
 
-DROP TABLE IF EXISTS registros_biodiversidade;
+DROP TABLE IF EXISTS biodiversity_records;
 
-CREATE TABLE registros_biodiversidade (
+CREATE TABLE biodiversity_records (
     id INT AUTO_INCREMENT PRIMARY KEY,
     barcode TEXT,
     collectioncode TEXT,
@@ -18,7 +18,6 @@ CREATE TABLE registros_biodiversidade (
     stateprovince TEXT,
     county TEXT,
     locality TEXT,
-    # coordinateprecision TEXT,
     institutioncode TEXT,
     phylum TEXT,
     basisofrecord TEXT,
@@ -36,10 +35,7 @@ CREATE TABLE registros_biodiversidade (
 	occurrenceremarks TEXT
 );
 
-# se os IDs começarem fora do 1:
-ALTER TABLE registros_biodiversidade AUTO_INCREMENT = 1;
+ALTER TABLE biodiversity_records AUTO_INCREMENT = 1;
 
-SET SQL_SAFE_UPDATES = 0; # caso ele diga que está no safe mode
-
-SELECT COUNT(*) FROM registros_biodiversidade;
-SELECT * FROM registros_biodiversidade;
+SELECT COUNT(*) FROM biodiversity_records;
+SELECT * FROM biodiversity_records;
