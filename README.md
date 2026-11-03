@@ -32,6 +32,8 @@ Install dezoomify-rs 2.12.3 [here](https://github.com/lovasoa/dezoomify-rs/relea
 
 Obtain an API key by registering with species_link [here](https://specieslink.net/ws/1.0/).
 
+Obtain the feature extractor for ResNet50v2 and VGG16 [here](https://github.com/xaaaandao/piperaceae-features).
+
 ## Prerequisites:
 - Install all of the requirements listed at ```requirements.txt``` with the following command:
 ```
@@ -191,6 +193,7 @@ what would you like to do?
 [3] test on a new dataset.npy (post-training)
 [4] sort a collection into image types
 [5] check the number of samples and features
+[6] extract features with ViT
 ```
 For the classifier, there are no submenus within the main menu; the listed topics represent the tool's available methods. For a more detailed description of how each method works, you can either read the relevant section of the tool's documentation or run ```python svm2.py METHOD_NAME -h```.
 
@@ -207,10 +210,13 @@ run another method?
 The tool prompts you for a set of commands via the terminal to perform the requested operations. If you are unfamiliar with the necessary search parameters, you can use the ```-h``` flag to view the included help comments. It is recommended to read the section on the continuous tool in herbcore_tool to understand how the ```-h``` help guide works.
 
 ### Classifier tool pipeline:
-The tool's pipeline notebook is not designed to train or validate a model; instead, it simply categorizes herbarium images into three types: herbarium specimens (exsiccatae), labels, and live plant images. To do this, run ```separating.ipynb```, which already includes calls to the pre-trained model and scaler.
+The tool's pipeline notebook is not designed to train or validate a model; instead, it simply categorizes herbarium images into three types: herbarium specimens (exsiccatae), labels, and live plant images. To do this, run ```separating.ipynb```, which already includes calls to the pre-trained model (with ResNet50v2, if you want to use another model you will need to train it) and scaler.
 
 ### Examples of command usage, in the order of the methods:
 ```python
+
+# extracting features (vit only)
+python vit.py extract -i ./images_to_extract -o ./extracted_features
 
 # training and testing
 python svm2.py testing_dataset --arq1 imagens-saida/f1.npy --arq2 imagens-saida/f2.npy --arq3 imagens-saida/f3.npy --dir_imagens imagens-saida --kernel linear --c 0.1 --folds 5 --novo_arq1 amostragem/f1.npy --novo_arq2 amostragem/f2.npy --novo_arq3 amostragem/f3.npy --matriz 1

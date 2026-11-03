@@ -1,5 +1,6 @@
 import argparse
 import random
+import torch
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -77,15 +78,34 @@ class artificial_inteligence:
                 else:
                     real_class = "f3"
 
+                label_info = f"true label was {true_label} ({real_class}) - predicted {pred_label} (0=f1, 1=f2, 2=f3)"
+                
                 if self.dir_images: 
-                    class_folder = os.path.join(self.dir_images, "images", "tf.keras", real_class) 
-                    files = glob.glob(os.path.join(class_folder, "*.jpg"))
+                    cnn_folder = os.path.join(self.dir_images, "images", "tf.keras", real_class)
+                    vit_folder = os.path.join(self.dir_images, "images", real_class)
+                    caminho = None
 
-                    if files: 
-                        caminho = files[global_idx % len(files)]  
-                        print(f"  [true label was {true_label} ({real_class}) - predicted {pred_label} (0=f1, 1=f2, 2=f3)], image:  {caminho}")
+                    if os.path.isdir(cnn_folder):
+                        files = glob.glob(os.path.join(cnn_folder, "*.jpg"))
+                        if files:
+                            caminho = files[global_idx % len(files)]
                     else:
-                        print(f"  [true label was {true_label} ({real_class}) - predicted {pred_label} (0=f1, 1=f2, 2=f3)], no image found")
+                        # images are copied in sorted order,
+                        # so row i of the .npy matches the i-th sorted image
+                        valid_ext = {'.jpg', '.jpeg', '.png', '.webp'}
+                        files = sorted(p for p in pathlib.Path(vit_folder).rglob("*")
+                                       if p.is_file() and p.suffix.lower() in valid_ext)
+
+                        start = 0 if real_class == "f1" else (len_f1 if real_class == "f2" else len_f1 + len_f2)
+                        local_idx = global_idx - start
+
+                        if local_idx < len(files):
+                            caminho = files[local_idx]
+
+                    if caminho:
+                        print(f"  [{label_info}], image:  {caminho}")
+                    else:
+                        print(f"  [{label_info}], no image found")
                 else: 
                     print(f"  [true label was {true_label} - predicted {pred_label} (0=f1, 1=f2, 2=f3)], no folder, index {global_idx}")
 
@@ -196,25 +216,38 @@ class artificial_inteligence:
         X_scaled = self.scaler.fit_transform(self.X)
         self.svm.fit(X_scaled, self.y)
 
-        model_cnn, preprocess_input = self.load_cnn_model(model_name)
+        if model_name == "vit":
+            from vit import vit_feature_extractor
+            extractor = vit_feature_extractor(origin_dir, destiny_dir)
+            extractor.load_model()
+
+        else:
+            model_cnn, preprocess_input = self.load_cnn_model(model_name)
 
         classes_map = {0: "f1", 1: "f2", 2: "f3"} 
         for folder in classes_map.values():
             os.makedirs(os.path.join(destiny_dir, folder), exist_ok=True)
 
-        extensions = ('*.png', '*.jpg', '*.jpeg', '*.PNG', '*.JPG', '*.JPEG')
+        extensions = ('*.png', '*.jpg', '*.jpeg', '*.webp', '*.PNG', '*.JPG', '*.JPEG', '*.WEBP')
         files = []
         for ext in extensions:
             files.extend(pathlib.Path(origin_dir).rglob(ext))
 
         for file in files:
-            img = tf.keras.preprocessing.image.load_img(file, target_size=target_size) 
-            img_array = tf.keras.preprocessing.image.img_to_array(img)
-            
-            img_array = np.expand_dims(img_array, axis=0)
-            img_array = preprocess_input(img_array)
+            if model_name == "vit":
+                with torch.no_grad():
+                    feature = extractor.extract_image(file)  # (n, 768)
+            else:
+                img = tf.keras.preprocessing.image.load_img(file, target_size=target_size) 
+                img_array = tf.keras.preprocessing.image.img_to_array(img)
+                
+                img_array = np.expand_dims(img_array, axis=0)
+                img_array = preprocess_input(img_array)
 
-            feature = model_cnn.predict(img_array, verbose=0) 
+                feature = model_cnn.predict(img_array, verbose=0)
+
+            if feature.shape[1] != self.X.shape[1]:
+                raise ValueError("use the same model from the training extraction")
             
             feature_scaled = self.scaler.transform(feature)
             prediction = self.svm.predict(feature_scaled)[0] 
@@ -271,7 +304,7 @@ def main():
     organize.add_argument("--arq1", required=True, help="path for class 1's .npy file (training)")
     organize.add_argument("--arq2", required=True, help="path for class 2's .npy file (training)")
     organize.add_argument("--arq3", required=True, help="path for class 3's .npy file (training)")
-    organize.add_argument("--model", choices=['vgg16', 'resnet50v2'], default='vgg16', help="CNN architecture for extracting features - use the same one used in the training extraction")
+    organize.add_argument("--model", choices=['vgg16', 'resnet50v2', 'vit'], default='resnet50v2', help="CNN architecture for extracting features - use the same one used in the training extraction")
     organize.add_argument("--kernel", default="linear", help="kernel (ex: linear, rbf, poly)")
     organize.add_argument("--c", type=float, default=1.0, help="C margin")
     organize.add_argument("--origin_dir", required=True, help="folder with the mixed classes")

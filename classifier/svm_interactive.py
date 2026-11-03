@@ -7,6 +7,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score
 from sklearn.model_selection import GridSearchCV
 from svm2 import artificial_inteligence
+from vit import vit_feature_extractor
 
 def interactive_mode():
     while True:
@@ -16,6 +17,7 @@ def interactive_mode():
         print("[3] test on a new dataset.npy (post-training)")
         print("[4] sort a collection into image types")
         print("[5] check the number of samples and features")
+        print("[6] extract features with ViT")
 
         choice2 = input("choose an option ").strip()
 
@@ -84,13 +86,13 @@ def interactive_mode():
             destiny_dir = input("output directory (where to create f1, f2, f3): ").strip()
             kernel = input("kernel (ex: linear, rbf, poly): ").strip() or "linear"
             c = float(input("C margin: ") or 1.0)
-            model = input("CNN model (vgg16 ou resnet50v2 - use the same from the training): ").strip() or "vgg16"
+            model = input("CNN model (vgg16, resnet50v2 or vit - use the same from the training): ").strip() or "vgg16"
 
             ia = artificial_inteligence(arq1, arq2, arq3, kernel, c)
             ia.load_data()
             ia.set_svm()
             
-            ia.organize_images(origin_dir, destiny_dir, name_model=model, target_size=(224,224))
+            ia.organize_images(origin_dir, destiny_dir, model_name=model, target_size=(224,224))
 
             finishing = input("\nexecute another method?\n[Y] yes\n[N] no\n").strip().upper()
             if finishing == "N":
@@ -102,6 +104,20 @@ def interactive_mode():
             ia = artificial_inteligence(arq1, arq2, arq3)
             ia.load_data()
             ia.verify_dimensions()
+
+            finishing = input("\nexecute another method?\n[Y] yes\n[N] no\n").strip().upper()
+            if finishing == "N":
+                break
+        elif choice2 == "6":
+            input_dir = input("\nfolder containing the f1, f2, f3 subfolders: ").strip()
+            output_dir = input("output folder for images/ and features/: ").strip()
+            model_name = input("ViT model (default google/vit-base-patch16-224-in21k): ").strip() \
+                         or "google/vit-base-patch16-224-in21k"
+
+            extractor = vit_feature_extractor(input_dir, output_dir, model_name)
+            extractor.extract()
+            print("extraction concluded")
+            print(f"features saved in {extractor.features_root}")
 
             finishing = input("\nexecute another method?\n[Y] yes\n[N] no\n").strip().upper()
             if finishing == "N":
