@@ -66,8 +66,8 @@ class feature_fusion:
             raise ValueError(f"fold {fold} - {model_name} - repeated filenames, can't match by name")
 
         if set(tf_names) != set(vit_names):
-            only_tf = sorted(set(tf_names) - set(vit_names))[:5]
-            only_vit = sorted(set(vit_names) - set(tf_names))[:5]
+            only_tf = sorted(set(tf_names) - set(vit_names))
+            only_vit = sorted(set(vit_names) - set(tf_names))
             raise ValueError(f"fold {fold} - {model_name} - different images than the vit. " f"only in {model_name} - {only_tf} | only in vit: {only_vit}")
 
         if tf_names == vit_names:
@@ -86,7 +86,7 @@ class feature_fusion:
             data = np.load(path)
             if data.ndim != 2:
                 raise ValueError(f"{path} has shape {data.shape}, expected (n_images, n_features)")
-            print(f"fold {fold} - {model_name}: {data.shape} ({path})")
+            print(f"fold {fold} - {model_name} - {data.shape}")
             blocks[model_name] = data
 
         vit_names = self.get_vit_order(fold)
