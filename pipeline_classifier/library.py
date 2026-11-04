@@ -13,5 +13,10 @@ import os
 import shutil
 import pathlib
 import tensorflow as tf
-from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
+from PIL import Image
+import torch
+from transformers import ViTImageProcessor, ViTModel
+from tensorflow.keras.applications import VGG16, ResNet50V2
+from tensorflow.keras.applications.vgg16 import preprocess_input as preprocess_vgg
+from tensorflow.keras.applications.resnet_v2 import preprocess_input as preprocess_resnet
 import joblib

@@ -86,7 +86,7 @@ def assess_model(X, y, arq1, arq2, arq3, n_splits=5, dir_images=None, matriz=Fal
         f1_folds.append(f1)
         # print(f"fold's {fold} f1 score was {f1:.4f}")
 
-        error_reports(y_test, y_pred, test_idx, len_f1, len_f2, len_f3, dir_images)
+        error_reports(y_test, y_pred, test_idx, len_f1, len_f2, len_f3)
 
     avg_f1 = np.mean(f1_folds)
     deviation_f1 = np.std(f1_folds)
@@ -99,7 +99,7 @@ def assess_model(X, y, arq1, arq2, arq3, n_splits=5, dir_images=None, matriz=Fal
 
     return avg_f1, deviation_f1
 
-def error_reports(y_test, y_pred, test_idx, len_f1, len_f2, len_f3, dir_images):
+def error_reports(y_test, y_pred, test_idx, len_f1, len_f2, len_f3):
     erros = np.where(y_pred != y_test)[0] 
 
     if(erros.size > 0):
@@ -110,22 +110,13 @@ def error_reports(y_test, y_pred, test_idx, len_f1, len_f2, len_f3, dir_images):
             pred_label = y_pred[i] 
 
             if global_idx < len_f1: 
-                classe_real = "f1"
+                true_label = "f1"
             elif global_idx < len_f1 + len_f2:
-                classe_real = "f2"
+                true_label = "f2"
             else: 
-                classe_real = "f3"
+                true_label = "f3"
 
-            if dir_images: 
-                class_folder = os.path.join(dir_images, "images", "tf.keras", classe_real) 
-                files = glob.glob(os.path.join(class_folder, "*.jpg")) 
-
-                if files: 
-                    path = files[global_idx % len(files)] 
-                else: 
-                    pass
-            else: 
-                pass
+            print(f"error at {global_idx} (from {true_label}). prediction - f{pred_label + 1}")
 
 def confusion_matrixx(y_true, y_pred, labels_class=None):
     cm = confusion_matrix(y_true, y_pred)
@@ -146,8 +137,12 @@ def image_organizing(origin_folder, destiny_folder, target_size=(224, 224)):
         scaler = joblib.load('svm_scaler.joblib')
         svm_model = joblib.load('svm_model.joblib')
 
-        model_cnn = tf.keras.applications.ResNet50V2(weights='imagenet', include_top=False, pooling='avg')
-        preprocess_input = tf.keras.applications.resnet_v2.preprocess_input
+        model_vgg = VGG16(weights='imagenet', include_top=False, pooling='avg')
+        model_resnet = ResNet50V2(weights='imagenet', include_top=False, pooling='avg')
+
+        vit_name = "google/vit-base-patch16-224-in21k"
+        vit_processor = ViTImageProcessor.from_pretrained(vit_name)
+        model_vit = ViTModel.from_pretrained(vit_name)
 
         classes_map = {0: "f1", 1: "f2", 2: "f3"}
         for folder in classes_map.values():
@@ -159,33 +154,54 @@ def image_organizing(origin_folder, destiny_folder, target_size=(224, 224)):
             files.extend(pathlib.Path(origin_folder).rglob(ext))
 
         for file in files:
+            # original image
             img = tf.keras.preprocessing.image.load_img(file, target_size=target_size) 
-            img_array = tf.keras.preprocessing.image.img_to_array(img)
-            img_array = preprocess_input(img_array)
-            img_array = np.expand_dims(img_array, axis=0)
+            img_array_base = tf.keras.preprocessing.image.img_to_array(img)
+            img_array_expanded = np.expand_dims(img_array_base, axis=0)
 
-            feature = model_cnn.predict(img_array, verbose=0)
+            # vgg
+            img_vgg = preprocess_vgg(np.copy(img_array_expanded))
+            feat_vgg = model_vgg.predict(img_vgg, verbose=0)
+
+            # resnet
+            img_resnet = preprocess_resnet(np.copy(img_array_expanded))
+            feat_resnet = model_resnet.predict(img_resnet, verbose=0)
+
+            # vit
+            pil_img = Image.open(file).convert("RGB")
+            vit_inputs = vit_processor(images=pil_img, return_tensors="pt")
+
+            with torch.no_grad():
+                vit_outputs = model_vit(**vit_inputs)
+
+            feat_vit = vit_outputs.last_hidden_state[:, 0, :].numpy()
+
+            fused_features = np.concatenate([feat_vgg, feat_resnet, feat_vit], axis=1)
             
-            feature_scaled = scaler.transform(feature) # z-score
+            feature_scaled = scaler.transform(fused_features) # z-score
             prediction = svm_model.predict(feature_scaled)[0] 
             
             choosen_folder = classes_map[prediction] 
-            destino_final = os.path.join(destiny_folder, choosen_folder, file.name)
-            shutil.copy(str(file), destino_final)
+            target_path = os.path.join(destiny_folder, choosen_folder, file.name)
+            shutil.copy(str(file), target_path)
             
             print(f" {file.name} copied to /{choosen_folder}")
 
         print(f"\norganizing concluded. separated images are in {destiny_folder}")
 
-result_grid = grid_search(arq1='imagens-saida-resnet/f1.npy', arq2='imagens-saida-resnet/f2.npy', arq3='imagens-saida-resnet/f3.npy')
+path_f1 = 'features_fusion/features/f1/f1.npy'
+path_f2 = 'features_fusion/features/f2/f2.npy'
+path_f3 = 'features_fusion/features/f3/f3.npy'
+
+result_grid = grid_search(arq1=path_f1, arq2=path_f2, arq3=path_f3)
 
 better_params = result_grid.best_params_
 best_kernel = better_params['kernel']
 best_c = better_params['C']
 
-X, y = load_data('imagens-saida-resnet/f1.npy', 'imagens-saida-resnet/f2.npy', 'imagens-saida-resnet/f3.npy')
+X, y = load_data(path_f1, path_f2, path_f3)
 
-media, desvio = assess_model(X=X, y=y, arq1='imagens-saida-resnet/f1.npy', arq2='imagens-saida-resnet/f2.npy', arq3='imagens-saida-resnet/f3.npy', dir_images='imagens-saida-resnet', matriz=False)
+media, desvio = assess_model(X=X, y=y, arq1=path_f1, arq2=path_f2, arq3=path_f3, dir_images=None, matriz=False)
 
 # saving the model for future use
 scaler_f = StandardScaler()
