@@ -172,6 +172,8 @@ This code was developed to categorize images previously obtained via the *herbco
 The tool is split into two separate files:
 - svm2.py: code file defining the tool's methods, which are explained below.
 - svm_interactive.py: used to call the methods from svm2.py interactively, similar to how herbcore_tool is used.
+- vit.py: used to extract features from images using ViT. Available also in the interactive mode.
+- fusion.py: concatenates features extracted with ViT + VGG16 + ResNet50. Available also in the interactive mode.
 
 ## Prerequisites:
 - Install all of the requirements listed at ```requirements.txt``` with the following command:
