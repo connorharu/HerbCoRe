@@ -8,6 +8,7 @@ from sklearn.metrics import f1_score
 from sklearn.model_selection import GridSearchCV
 from svm2 import artificial_inteligence
 from vit import vit_feature_extractor
+from fusion import feature_fusion
 
 def interactive_mode():
     while True:
@@ -18,6 +19,7 @@ def interactive_mode():
         print("[4] sort a collection into image types")
         print("[5] check the number of samples and features")
         print("[6] extract features with ViT")
+        print("[7] fuse features (early fusion - vgg + resnet50v2 + vit)")
 
         choice2 = input("choose an option ").strip()
 
@@ -118,6 +120,21 @@ def interactive_mode():
             extractor.extract()
             print("extraction concluded")
             print(f"features saved in {extractor.features_root}")
+
+            finishing = input("\nexecute another method?\n[Y] yes\n[N] no\n").strip().upper()
+            if finishing == "N":
+                break
+
+        elif choice2 == "7":
+            vgg16_dir = input("\nfolder with the vgg16 features: ").strip()
+            resnet_dir = input("folder with the resnet50v2 features: ").strip()
+            vit_dir = input("folder with the vit features: ").strip()
+            output_dir = input("output folder for the fused features: ").strip()
+
+            print("\nstarting fusion...")
+            fusion_process = feature_fusion(vgg16_dir, resnet_dir, vit_dir, output_dir)
+            fusion_process.fuse()
+            print("fusion concluded!")
 
             finishing = input("\nexecute another method?\n[Y] yes\n[N] no\n").strip().upper()
             if finishing == "N":

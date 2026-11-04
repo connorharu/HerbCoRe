@@ -3,7 +3,7 @@ joblib==1.5.2
 matplotlib==3.11.2
 mysql_connector_repackaged==0.3.1
 numpy==2.5.4
-pandas==3.1.0
+pandas==3.1.1
 Pillow==10.1.0
 Pillow==13.0.0
 PyMySQL==1.1.1

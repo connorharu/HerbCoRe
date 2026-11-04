@@ -194,6 +194,7 @@ what would you like to do?
 [4] sort a collection into image types
 [5] check the number of samples and features
 [6] extract features with ViT
+[7] fuse features (early fusion - vgg + resnet50v2 + vit)
 ```
 For the classifier, there are no submenus within the main menu; the listed topics represent the tool's available methods. For a more detailed description of how each method works, you can either read the relevant section of the tool's documentation or run ```python svm2.py METHOD_NAME -h```.
 
@@ -217,6 +218,9 @@ The tool's pipeline notebook is not designed to train or validate a model; inste
 
 # extracting features (vit only)
 python vit.py extract -i ./images_to_extract -o ./extracted_features
+
+# concatenating features vit + vgg + resnet50v2) in fusion.py
+python fusion.py fuse --vgg16 saida-vgg16 --resnet50v2 saida-resnet --vit features_extraidas5 --output features_fusion
 
 # training and testing
 python svm2.py testing_dataset --arq1 imagens-saida/f1.npy --arq2 imagens-saida/f2.npy --arq3 imagens-saida/f3.npy --dir_imagens imagens-saida --kernel linear --c 0.1 --folds 5 --novo_arq1 amostragem/f1.npy --novo_arq2 amostragem/f2.npy --novo_arq3 amostragem/f3.npy --matriz 1

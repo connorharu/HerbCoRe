@@ -29,3 +29,8 @@ balanceado-vit/
 balanceado-saida-vit/
 features_extraidas7/
 balanceado-separado/
+imagens-saida-vgg/
+imagens-saida-vit/
+balanceado-saida-ext-vgg/
+features_fusion/
+features_fusion2/
