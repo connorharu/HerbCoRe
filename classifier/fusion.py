@@ -148,7 +148,7 @@ class feature_fusion:
         self.save_info(dims, samples)
 
 class late_fusion(feature_fusion):
-    def __init__(self, vgg16_dir, resnet50v2_dir, vit_dir, kernel, C, n_splits=5, tiebreak="vit"):
+    def __init__(self, vgg16_dir, resnet50v2_dir, vit_dir, kernel, C, n_splits=5, tiebreak="resnet50v2"):
         super().__init__(vgg16_dir, resnet50v2_dir, vit_dir)
         self.kernel = kernel
         self.C = C
@@ -334,7 +334,7 @@ def main():
     late.add_argument("--kernel", default="linear", help="kernel (ex: linear, rbf, poly)")
     late.add_argument("--c", type=float, default=1.0, help="C margin")
     late.add_argument("--splits", type=int, default=5, help="number of cross validation splits")
-    late.add_argument("--tiebreak", choices=["vgg16", "resnet50v2", "vit"], default="vit", help="model that decides when all models disagree")
+    late.add_argument("--tiebreak", choices=["vgg16", "resnet50v2", "vit"], default="resnet50v2", help="model that decides when all models disagree")
     late.add_argument("--matrix", type=int, choices=[0, 1], default=1, help="if 1, shows confusion matrix, if 0, doesn't")
 
     args = parser.parse_args()
