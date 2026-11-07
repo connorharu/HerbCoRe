@@ -173,7 +173,7 @@ The tool is split into two separate files:
 - svm2.py: code file defining the tool's methods, which are explained below.
 - svm_interactive.py: used to call the methods from svm2.py interactively, similar to how herbcore_tool is used.
 - vit.py: used to extract features from images using ViT. Available also in the interactive mode.
-- fusion.py: concatenates features extracted with ViT + VGG16 + ResNet50. Available also in the interactive mode.
+- fusion.py: concatenates features extracted with ViT + VGG16 + ResNet50, both in early and late fusion. Available also in the interactive mode.
 
 ## Prerequisites:
 - Install all of the requirements listed at ```requirements.txt``` with the following command:
@@ -197,6 +197,7 @@ what would you like to do?
 [5] check the number of samples and features
 [6] extract features with ViT
 [7] fuse features (early fusion - vgg + resnet50v2 + vit)
+[8] fuse features (late fusion by majority vote - vgg + resnet50v2 + vit)
 ```
 For the classifier, there are no submenus within the main menu; the listed topics represent the tool's available methods. For a more detailed description of how each method works, you can either read the relevant section of the tool's documentation or run ```python svm2.py METHOD_NAME -h```.
 
@@ -221,8 +222,11 @@ The tool's pipeline notebook is not designed to train or validate a model; inste
 # extracting features (vit only)
 python vit.py extract -i ./images_to_extract -o ./extracted_features
 
-# concatenating features vit + vgg + resnet50v2) in fusion.py
+# early fusion - concatenating features vit + vgg + resnet50v2) in fusion.py
 python fusion.py fuse --vgg16 saida-vgg16 --resnet50v2 saida-resnet --vit features_extraidas5 --output features_fusion
+
+# late fusion - majority vote
+python fusion.py late --vgg16 imagens-saida-vgg --resnet50v2 imagens-saida-resnet --vit imagens-saida-vit --kernel linear --c 0.1
 
 # training and testing
 python svm2.py testing_dataset --arq1 imagens-saida/f1.npy --arq2 imagens-saida/f2.npy --arq3 imagens-saida/f3.npy --dir_imagens imagens-saida --kernel linear --c 0.1 --folds 5 --novo_arq1 amostragem/f1.npy --novo_arq2 amostragem/f2.npy --novo_arq3 amostragem/f3.npy --matriz 1

@@ -3,9 +3,14 @@ import argparse
 import numpy as np
 import pandas as pd
 from pathlib import Path
+from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import f1_score, confusion_matrix
+import random
 
 class feature_fusion:
-    def __init__(self, vgg16_dir, resnet50v2_dir, vit_dir, output_dir):
+    def __init__(self, vgg16_dir, resnet50v2_dir, vit_dir, output_dir="."):
         self.sources = {
             "vgg16": Path(vgg16_dir).resolve(),
             "resnet50v2": Path(resnet50v2_dir).resolve(),
@@ -142,6 +147,176 @@ class feature_fusion:
 
         self.save_info(dims, samples)
 
+class late_fusion(feature_fusion):
+    def __init__(self, vgg16_dir, resnet50v2_dir, vit_dir, kernel, C, n_splits=5, tiebreak="vit"):
+        super().__init__(vgg16_dir, resnet50v2_dir, vit_dir)
+        self.kernel = kernel
+        self.C = C
+        self.n_splits = n_splits
+        self.tiebreak = tiebreak
+        self.class_names = ["Exsiccatae", "Labels", "Live plants"]
+
+    def load_all(self):
+        self.load_samples() # from feature_fusion
+
+        X_parts = {} # per model one list, with its own matrix per class
+        for model_name in self.sources:
+            X_parts[model_name] = []
+        y = []
+        filenames = []
+
+        for fold in self.folders:
+            blocks, vit_names = self.load_fold(fold)
+            for model_name, block in blocks.items():
+                X_parts[model_name].append(block)
+            n_images = len(vit_names)
+            labels = [fold - 1] * n_images
+
+            y.extend(labels)
+            filenames.extend(vit_names)
+
+        X = {}
+        for model_name, parts in X_parts.items(): # stacking matrices f1, f2, and f3 of each model
+            X[model_name] = np.vstack(parts)
+
+        return X, np.array(y), filenames
+
+    def vote(self, predictions):
+        # predictions: (n_models, n_samples), one row of predicted classes per model
+        model_names = list(self.sources)
+        tiebreak_idx = model_names.index(self.tiebreak)
+        n_classes = len(self.folders)
+        n_samples = predictions.shape[1]
+
+        result = np.zeros(n_samples, dtype=int)
+        ties = []
+
+        for j in range(n_samples):
+            votes = predictions[:, j] # the votes of the models for the image j
+            counts = np.bincount(votes, minlength=n_classes) # how many votes each class got
+            max_votes = counts.max()
+            winners = np.flatnonzero(counts == max_votes)
+
+            if len(winners) == 1:
+                result[j] = winners[0]
+            else:
+                # tie
+                tied_prediction = predictions[tiebreak_idx, j]
+                if tied_prediction in winners:
+                    result[j] = tied_prediction
+                else:
+                    result[j] = winners[0]
+
+                ties.append((j, votes, result[j]))
+
+        return result, ties
+
+    def assess(self, X, y, filenames):
+        model_names = list(self.sources)
+        seed = random.randint(0, 1000)
+        # seed = 823 # testing
+        skf = StratifiedKFold(n_splits=self.n_splits, shuffle=True, random_state=seed)
+        print(f"\nseed: {seed}\n")
+
+        # every sample is tested once, so these hold the out-of-fold predictions
+        out_of_fold = {}
+        for name in model_names:
+            out_of_fold[name] = np.zeros(len(y), dtype=int)
+        out_of_fold["vote"] = np.zeros(len(y), dtype=int)
+
+        f1_per_split = {} # f1 for each split, for each model and vote
+        for name in out_of_fold:
+            f1_per_split[name] = []
+
+        total_ties = 0
+
+        # rows are aligned (same image in the same row)
+        for split, (train_idx, test_idx) in enumerate(skf.split(X[model_names[0]], y), 1):
+            predictions = []
+
+            for name in model_names:
+                X_train = X[name][train_idx]
+                X_test = X[name][test_idx]
+                y_train = y[train_idx]
+
+                scaler = StandardScaler()
+                X_train = scaler.fit_transform(X_train)
+                X_test = scaler.transform(X_test)
+
+                svm = SVC(kernel=self.kernel, C=self.C)
+                svm.fit(X_train, y_train)
+                y_pred = svm.predict(X_test)
+
+                predictions.append(y_pred)
+
+            predictions = np.array(predictions)
+            voted, ties = self.vote(predictions)
+            n_ties = len(ties)
+            total_ties += n_ties
+
+            for name, pred in zip(model_names, predictions):
+                out_of_fold[name][test_idx] = pred
+            out_of_fold["vote"][test_idx] = voted
+
+            all_names = model_names + ["vote"]
+            all_predictions = list(predictions) + [voted]
+
+            line = []
+            for name, pred in zip(all_names, all_predictions):
+                f1 = f1_score(y[test_idx], pred, average='weighted')
+                f1_per_split[name].append(f1)
+                line.append(f"{name} {f1:.4f}")
+            print(f"split {split} - f1: " + " / ".join(line) + f" / ties: {n_ties}")
+
+            for j, votes, chosen_class in ties:
+                image_idx = test_idx[j]  # position of the image in the whole dataset
+                true_class = y[image_idx]
+
+                votes_text = []
+                for name, vote in zip(model_names, votes):
+                    votes_text.append(f"{name} f{vote + 1}")
+
+                if chosen_class == true_class:
+                    outcome = "correct"
+                else:
+                    outcome = "wrong"
+
+                print(f"  tie - {filenames[image_idx]} (true was f{true_class + 1}) - "
+                      + " / ".join(votes_text)
+                      + f" - vote f{chosen_class + 1} by {self.tiebreak} ({outcome})")
+
+        print("\naverage f1 (standard deviation):")
+        for name, values in f1_per_split.items():
+            average = np.mean(values)
+            deviation = np.std(values)
+            print(f"  {name}: {average:.4f} ({deviation:.4f})")
+        print(f"samples decided by tie-break ({self.tiebreak}) - {total_ties} of {len(y)}")
+
+        return out_of_fold
+
+    def show_matrix(self, y, y_pred):
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+
+        cm = confusion_matrix(y, y_pred)
+        plt.figure(figsize=(6, 5))
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Greens", xticklabels=self.class_names, yticklabels=self.class_names)
+        plt.xlabel("Predicted class")
+        plt.ylabel("True class")
+        plt.title("Confusion matrix (voting)")
+        plt.show()
+
+    def run(self, matrix=False):
+        for model_name, source_dir in self.sources.items():
+            if not source_dir.exists():
+                raise SystemExit(f"{model_name} - {source_dir} does not exist")
+
+        X, y, filenames = self.load_all()
+        out_of_fold = self.assess(X, y, filenames)
+
+        if matrix:
+            self.show_matrix(y, out_of_fold["vote"])
+
 def main():
     parser = argparse.ArgumentParser(description="early fusion of features from different models")
     subparsers = parser.add_subparsers(dest="command", help="method to be executed")
@@ -152,12 +327,26 @@ def main():
     fuse.add_argument("--vit", required=True, help="folder with the vit features")
     fuse.add_argument("--output", "-o", required=True, help="output folder for the fused features")
 
+    late = subparsers.add_parser("late", help="late fusion, one svm per model, final class by majority vote")
+    late.add_argument("--vgg16", required=True, help="folder with the vgg16 features")
+    late.add_argument("--resnet50v2", required=True, help="folder with the resnet50v2 features")
+    late.add_argument("--vit", required=True, help="folder with the vit features")
+    late.add_argument("--kernel", default="linear", help="kernel (ex: linear, rbf, poly)")
+    late.add_argument("--c", type=float, default=1.0, help="C margin")
+    late.add_argument("--splits", type=int, default=5, help="number of cross validation splits")
+    late.add_argument("--tiebreak", choices=["vgg16", "resnet50v2", "vit"], default="vit", help="model that decides when all models disagree")
+    late.add_argument("--matrix", type=int, choices=[0, 1], default=1, help="if 1, shows confusion matrix, if 0, doesn't")
+
     args = parser.parse_args()
 
     if args.command == "fuse":
         fusion = feature_fusion(args.vgg16, args.resnet50v2, args.vit, args.output)
         fusion.fuse()
-        print("fusion concluded")
+        print("\nearly fusion concluded\n")
+    elif args.command == "late":
+        fusion = late_fusion(args.vgg16, args.resnet50v2, args.vit, kernel=args.kernel, C=args.c, n_splits=args.splits, tiebreak=args.tiebreak)
+        fusion.run(matrix=bool(args.matrix))
+        print("\nlate fusion concluded\n")
     else:
         parser.print_help()
 

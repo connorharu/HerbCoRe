@@ -8,7 +8,7 @@ from sklearn.metrics import f1_score
 from sklearn.model_selection import GridSearchCV
 from svm2 import artificial_inteligence
 from vit import vit_feature_extractor
-from fusion import feature_fusion
+from fusion import feature_fusion, late_fusion
 
 def interactive_mode():
     while True:
@@ -20,6 +20,7 @@ def interactive_mode():
         print("[5] check the number of samples and features")
         print("[6] extract features with ViT")
         print("[7] fuse features (early fusion - vgg + resnet50v2 + vit)")
+        print("[8] fuse features (late fusion by majority vote - vgg + resnet50v2 + vit)")
 
         choice2 = input("choose an option ").strip()
 
@@ -113,8 +114,7 @@ def interactive_mode():
         elif choice2 == "6":
             input_dir = input("\nfolder containing the f1, f2, f3 subfolders: ").strip()
             output_dir = input("output folder for images/ and features/: ").strip()
-            model_name = input("ViT model (default google/vit-base-patch16-224-in21k): ").strip() \
-                         or "google/vit-base-patch16-224-in21k"
+            model_name = input("ViT model (default google/vit-base-patch16-224-in21k): ").strip() or "google/vit-base-patch16-224-in21k"
 
             extractor = vit_feature_extractor(input_dir, output_dir, model_name)
             extractor.extract()
@@ -135,6 +135,28 @@ def interactive_mode():
             fusion_process = feature_fusion(vgg16_dir, resnet_dir, vit_dir, output_dir)
             fusion_process.fuse()
             print("fusion concluded!")
+
+            finishing = input("\nexecute another method?\n[Y] yes\n[N] no\n").strip().upper()
+            if finishing == "N":
+                break
+        elif choice2 == "8":
+            vgg16_dir = input("\nfolder with the vgg16 features: ").strip()
+            resnet_dir = input("folder with the resnet50v2 features: ").strip()
+            vit_dir = input("folder with the vit features: ").strip()
+            kernel = input("kernel (ex: linear, rbf, poly): ").strip() or "linear"
+            c = float(input("C margin: ") or 1.0)
+            folds = int(input("fold numbers: ") or 5)
+            tiebreak = input("model that decides ties (vgg16, resnet50v2 or vit - default vit): ").strip() or "vit"
+            show_matrix = input("do you wish to see the confusion matrix?\n[Y] yes\n[N] no\n ").strip().upper() == "Y"
+
+            if tiebreak not in ("vgg16", "resnet50v2", "vit"):
+                print("\ninvalid model, using vit.")
+                tiebreak = "vit"
+
+            print("\nstarting late fusion...")
+            fusion_process = late_fusion(vgg16_dir, resnet_dir, vit_dir, kernel, c, folds, tiebreak)
+            fusion_process.run(matrix=show_matrix)
+            print("late fusion concluded!")
 
             finishing = input("\nexecute another method?\n[Y] yes\n[N] no\n").strip().upper()
             if finishing == "N":

@@ -1,4 +1,4 @@
-click==8.5.0
+click==8.5.1
 joblib==1.5.2
 matplotlib==3.11.2
 mysql_connector_repackaged==0.3.1
