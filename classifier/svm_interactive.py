@@ -150,8 +150,8 @@ def interactive_mode():
             show_matrix = input("do you wish to see the confusion matrix?\n[Y] yes\n[N] no\n ").strip().upper() == "Y"
 
             if tiebreak not in ("vgg16", "resnet50v2", "vit"):
-                print("\ninvalid model, using vit.")
-                tiebreak = "vit"
+                print("\ninvalid model, using resnet50v2.")
+                tiebreak = "resnet50v2"
 
             print("\nstarting late fusion...")
             fusion_process = late_fusion(vgg16_dir, resnet_dir, vit_dir, kernel, c, folds, tiebreak)
