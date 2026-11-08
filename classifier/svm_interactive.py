@@ -21,7 +21,7 @@ def interactive_mode():
         print("[6] extract features with ViT")
         print("[7] fuse features (early fusion - vgg + resnet50v2 + vit)")
         print("[8] fuse features (late fusion by majority vote - vgg + resnet50v2 + vit)")
-
+        print("[9] sort a collection into image types (late fusion)")
         choice2 = input("choose an option ").strip()
 
         if choice2 == "1":
@@ -157,6 +157,26 @@ def interactive_mode():
             fusion_process = late_fusion(vgg16_dir, resnet_dir, vit_dir, kernel, c, folds, tiebreak)
             fusion_process.run(matrix=show_matrix)
             print("late fusion concluded!")
+
+            finishing = input("\nexecute another method?\n[Y] yes\n[N] no\n").strip().upper()
+            if finishing == "N":
+                break
+        elif choice2 == "9":
+            vgg16_dir = input("\nfolder with the vgg16 training features: ").strip()
+            resnet_dir = input("folder with the resnet50v2 training features: ").strip()
+            vit_dir = input("folder with the vit training features: ").strip()
+            origin_dir = input("directory with the images to be organized: ").strip()
+            destiny_dir = input("output directory (where to create f1, f2, f3): ").strip()
+            kernel = input("kernel (ex: linear, rbf, poly): ").strip() or "linear"
+            c = float(input("C margin: ") or 1.0)
+            tiebreak = input("model that decides ties (vgg16, resnet50v2 or vit - default resnet50v2): ").strip() or "resnet50v2"
+
+            if tiebreak not in ("vgg16", "resnet50v2", "vit"):
+                print("\ninvalid model, using resnet50v2.")
+                tiebreak = "resnet50v2"
+
+            fusion_process = late_fusion(vgg16_dir, resnet_dir, vit_dir, kernel, c, tiebreak=tiebreak)
+            fusion_process.organize_images(origin_dir, destiny_dir)
 
             finishing = input("\nexecute another method?\n[Y] yes\n[N] no\n").strip().upper()
             if finishing == "N":

@@ -237,6 +237,9 @@ python svm2.py training --arq1 imagens-saida/f1.npy --arq2 imagens-saida/f2.npy 
 # separate images into subdirectories based on a training set
 python svm2.py organize_images --arq1 imagens-saida/f1.npy --arq2 imagens-saida/f2.npy --arq3 imagens-saida/f3.npy --dir_origem "teste/" --dir_destino "teste-org/ --kernel linear --c 0.1"
 
+# separate images into subdirectories with late fusion
+python fusion.py organize --vgg16 imagens-saida-vgg --resnet50v2 imagens-saida-resnet --vit imagens-saida-vit --origin_dir balanceado --destiny_dir imagens-organizadas --kernel linear --c 0.1
+
 # extracted feature vectors
 python svm2.py verify_dimensions --arq1 imagens-saida/f1.npy --arq2 imagens-saida/f2.npy --arq3 imagens-saida/f3.npy
 ```

@@ -8,6 +8,10 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score, confusion_matrix
 import random
+import shutil
+import torch
+import tensorflow as tf
+from vit import vit_feature_extractor
 
 class feature_fusion:
     def __init__(self, vgg16_dir, resnet50v2_dir, vit_dir, output_dir="."):
@@ -306,6 +310,101 @@ class late_fusion(feature_fusion):
         plt.title("Confusion matrix (voting)")
         plt.show()
 
+    def train_final_models(self, X, y):
+        scalers = {}
+        svms = {}
+
+        for name in self.sources:
+            scaler = StandardScaler()
+            X_scaled = scaler.fit_transform(X[name])
+
+            svm = SVC(kernel=self.kernel, C=self.C)
+            svm.fit(X_scaled, y)
+
+            scalers[name] = scaler
+            svms[name] = svm
+
+        return scalers, svms
+
+    def load_extractors(self, origin_dir, destiny_dir):
+        extractors = {}
+
+        vgg_model = tf.keras.applications.VGG16(weights='imagenet', include_top=False, pooling='avg')
+        vgg_preprocess = tf.keras.applications.vgg16.preprocess_input
+        extractors["vgg16"] = (vgg_model, vgg_preprocess)
+
+        resnet_model = tf.keras.applications.ResNet50V2(weights='imagenet', include_top=False, pooling='avg')
+        resnet_preprocess = tf.keras.applications.resnet_v2.preprocess_input
+        extractors["resnet50v2"] = (resnet_model, resnet_preprocess)
+
+        vit_extractor = vit_feature_extractor(origin_dir, destiny_dir)
+        vit_extractor.load_model()
+        extractors["vit"] = vit_extractor
+
+        return extractors
+
+    def extract_features(self, file, extractors, target_size):
+        features = {}
+
+        img = tf.keras.preprocessing.image.load_img(file, target_size=target_size)
+        img_array = tf.keras.preprocessing.image.img_to_array(img)
+        img_array = np.expand_dims(img_array, axis=0)
+
+        for name in ("vgg16", "resnet50v2"):
+            model, preprocess_input = extractors[name]
+            prepared = preprocess_input(img_array.copy())
+            features[name] = model.predict(prepared, verbose=0)  # (1, n_features)
+
+        with torch.no_grad():
+            features["vit"] = extractors["vit"].extract_image(file)
+
+        return features
+
+    def organize_images(self, origin_dir, destiny_dir, target_size=(224, 224)):
+        model_names = list(self.sources)
+        classes_map = {0: "f1", 1: "f2", 2: "f3"}
+
+        X, y, filenames = self.load_all()
+        scalers, svms = self.train_final_models(X, y)
+
+        extractors = self.load_extractors(origin_dir, destiny_dir)
+
+        for folder in classes_map.values():
+            (Path(destiny_dir) / folder).mkdir(parents=True, exist_ok=True)
+
+        files = sorted(p for p in Path(origin_dir).rglob("*") if p.is_file() and p.suffix.lower() in self.valid_extensions)
+        print(f"\n{len(files)} images to organize\n")
+
+        for file in files:
+            features = self.extract_features(file, extractors, target_size)
+
+            predictions = []
+            for name in model_names:
+                if features[name].shape[1] != X[name].shape[1]:
+                    raise ValueError(f"{name} - the new image has {features[name].shape[1]} features, but the training has {X[name].shape[1]}. use the same size and model of the training extraction")
+
+                features_scaled = scalers[name].transform(features[name])
+                prediction = svms[name].predict(features_scaled)[0]
+                predictions.append(prediction)
+
+            # vote expects (n_models, n_samples), here there is only one sample
+            predictions = np.array(predictions).reshape(len(model_names), 1)
+            voted, ties = self.vote(predictions)
+            chosen_class = voted[0]
+
+            votes_text = []
+            for name, prediction in zip(model_names, predictions[:, 0]):
+                votes_text.append(f"{name} f{prediction + 1}")
+
+            chosen_folder = classes_map[chosen_class]
+            final_path = Path(destiny_dir) / chosen_folder / file.name
+            shutil.copy(str(file), final_path)
+
+            tie_text = f" - tie, decided by {self.tiebreak}" if ties else ""
+            print(f" {file.name} copied to /{chosen_folder} ({' / '.join(votes_text)}){tie_text}")
+
+        print(f"\norganizing concluded. images separated in {destiny_dir}")
+
     def run(self, matrix=False):
         for model_name, source_dir in self.sources.items():
             if not source_dir.exists():
@@ -337,6 +436,18 @@ def main():
     late.add_argument("--tiebreak", choices=["vgg16", "resnet50v2", "vit"], default="resnet50v2", help="model that decides when all models disagree")
     late.add_argument("--matrix", type=int, choices=[0, 1], default=1, help="if 1, shows confusion matrix, if 0, doesn't")
 
+    organize = subparsers.add_parser("organize", help="late fusion, classifies new images by majority vote and copies them to f1, f2, f3")
+    organize.add_argument("--vgg16", required=True, help="folder with the vgg16 training features")
+    organize.add_argument("--resnet50v2", required=True, help="folder with the resnet50v2 training features")
+    organize.add_argument("--vit", required=True, help="folder with the vit training features")
+    organize.add_argument("--origin_dir", required=True, help="folder with the mixed images")
+    organize.add_argument("--destiny_dir", required=True, help="output directory where the organized f1, f2, f3 classes will be placed")
+    organize.add_argument("--kernel", default="linear", help="kernel (ex: linear, rbf, poly)")
+    organize.add_argument("--c", type=float, default=1.0, help="C margin")
+    organize.add_argument("--tiebreak", choices=["vgg16", "resnet50v2", "vit"], default="resnet50v2", help="model that decides when all models disagree")
+    organize.add_argument("--height", type=int, default=224, help="image height used in the training extraction of vgg16 and resnet50v2")
+    organize.add_argument("--width", type=int, default=224, help="image width used in the training extraction of vgg16 and resnet50v2")
+
     args = parser.parse_args()
 
     if args.command == "fuse":
@@ -347,6 +458,10 @@ def main():
         fusion = late_fusion(args.vgg16, args.resnet50v2, args.vit, kernel=args.kernel, C=args.c, n_splits=args.splits, tiebreak=args.tiebreak)
         fusion.run(matrix=bool(args.matrix))
         print("\nlate fusion concluded\n")
+    elif args.command == "organize":
+        fusion = late_fusion(args.vgg16, args.resnet50v2, args.vit, kernel=args.kernel, C=args.c, tiebreak=args.tiebreak)
+        fusion.organize_images(args.origin_dir, args.destiny_dir, target_size=(args.height, args.width))
+        print("\nlate fusion organizing concluded\n")
     else:
         parser.print_help()
 
