@@ -146,12 +146,12 @@ def interactive_mode():
             kernel = input("kernel (ex: linear, rbf, poly): ").strip() or "linear"
             c = float(input("C margin: ") or 1.0)
             folds = int(input("fold numbers: ") or 5)
-            tiebreak = input("model that decides ties (vgg16, resnet50v2 or vit - default resnet50v2): ").strip() or "resnet50v2"
+            tiebreak = input("model that decides ties (vgg16, resnet50v2 or vit - default vit): ").strip() or "resnet50v2"
             show_matrix = input("do you wish to see the confusion matrix?\n[Y] yes\n[N] no\n ").strip().upper() == "Y"
 
             if tiebreak not in ("vgg16", "resnet50v2", "vit"):
-                print("\ninvalid model, using resnet50v2.")
-                tiebreak = "resnet50v2"
+                print("\ninvalid model, using vit.")
+                tiebreak = "vit"
 
             print("\nstarting late fusion...")
             fusion_process = late_fusion(vgg16_dir, resnet_dir, vit_dir, kernel, c, folds, tiebreak)
@@ -169,11 +169,11 @@ def interactive_mode():
             destiny_dir = input("output directory (where to create f1, f2, f3): ").strip()
             kernel = input("kernel (ex: linear, rbf, poly): ").strip() or "linear"
             c = float(input("C margin: ") or 1.0)
-            tiebreak = input("model that decides ties (vgg16, resnet50v2 or vit - default resnet50v2): ").strip() or "resnet50v2"
+            tiebreak = input("model that decides ties (vgg16, resnet50v2 or vit - default vit): ").strip() or "resnet50v2"
 
             if tiebreak not in ("vgg16", "resnet50v2", "vit"):
-                print("\ninvalid model, using resnet50v2.")
-                tiebreak = "resnet50v2"
+                print("\ninvalid model, using vit.")
+                tiebreak = "vit"
 
             fusion_process = late_fusion(vgg16_dir, resnet_dir, vit_dir, kernel, c, tiebreak=tiebreak)
             fusion_process.organize_images(origin_dir, destiny_dir)
