@@ -1,3 +1,4 @@
+import os
 import re
 import argparse
 import numpy as np
@@ -26,6 +27,7 @@ class feature_fusion:
         self.folders = [1, 2, 3]
         self.valid_extensions = {'.jpg', '.jpeg', '.png', '.webp'}
         self.samples = {}
+        self.image_paths = []
 
     def find_feature_file(self, source_dir, fold):
         # f1.npy: vit.py structure
@@ -53,17 +55,27 @@ class feature_fusion:
         stem = path.stem.split("_patch=")[0]
         return stem + path.suffix
 
-    def get_vit_order(self, fold):
+    def get_vit_files(self, fold):
         # images are copied by vit.py in sorted order, only when the feature was extracted, so this list matches row by row the vit's .npy
         fold_dir = self.sources["vit"] / "images" / f"f{fold}"
         if not fold_dir.exists():
             raise FileNotFoundError(f"{fold_dir} not found. --vit must be the output folder of vit.py (with images/)")
 
-        names = [self.normalize_name(p.name) for p in sorted(fold_dir.rglob("*"))
-                 if p.is_file() and p.suffix.lower() in self.valid_extensions]
+        return [p for p in sorted(fold_dir.rglob("*"))
+                if p.is_file() and p.suffix.lower() in self.valid_extensions]
+
+    def get_vit_order(self, fold):
+        names = [self.normalize_name(p.name) for p in self.get_vit_files(fold)]
         if len(set(names)) != len(names):
-            raise ValueError(f"fold {fold} - repeated filenames in {fold_dir}, can't match by name")
+            raise ValueError(f"fold {fold} repeated filenames in {self.sources['vit'] / 'images' / f'f{fold}'}, can't match by name")
         return names
+
+    def copy_images(self, fold, files):
+        img_out_dir = self.output_path / "images" / f"f{fold}"
+        img_out_dir.mkdir(parents=True, exist_ok=True)
+        for file in files:
+            shutil.copy2(file, img_out_dir / file.name)
+        print(f"fold {fold} - copied {len(files)} images to {img_out_dir}")
 
     def reorder_to_vit(self, model_name, data, fold, vit_names):
         df = self.samples[model_name]
@@ -142,6 +154,7 @@ class feature_fusion:
             blocks, vit_names = self.load_fold(fold)
             fused = np.concatenate(list(blocks.values()), axis=1)  # (n_images, d_vgg + d_resnet + d_vit)
             self.save_fold(fold, fused)
+            self.copy_images(fold, self.get_vit_files(fold))
             samples.extend([[name, fold] for name in vit_names])
 
             current_dims = {name: block.shape[1] for name, block in blocks.items()}
@@ -162,6 +175,7 @@ class late_fusion(feature_fusion):
 
     def load_all(self):
         self.load_samples() # from feature_fusion
+        self.image_paths = []
 
         X_parts = {} # per model one list, with its own matrix per class
         for model_name in self.sources:
@@ -171,6 +185,7 @@ class late_fusion(feature_fusion):
 
         for fold in self.folders:
             blocks, vit_names = self.load_fold(fold)
+            self.image_paths.extend(self.get_vit_files(fold))
             for model_name, block in blocks.items():
                 X_parts[model_name].append(block)
             n_images = len(vit_names)
@@ -184,6 +199,21 @@ class late_fusion(feature_fusion):
             X[model_name] = np.vstack(parts)
 
         return X, np.array(y), filenames
+
+    def show_path(self, path):
+        try:
+            return os.path.relpath(path)
+        except ValueError:
+            return str(path)
+
+    def show_errors(self, y, out_of_fold):
+        y_pred = out_of_fold["vote"]
+        wrong = np.flatnonzero(y != y_pred)
+        print(f"\nimages wrong after the vote: {len(wrong)} of {len(y)}\n")
+
+        for i in wrong:
+            votes_text = " / ".join(f"{name} f{out_of_fold[name][i] + 1}" for name in self.sources)
+            print(f"[true label was {y[i]} (f{y[i] + 1}) - predicted {y_pred[i]} (0=f1, 1=f2, 2=f3)], image:  {self.show_path(self.image_paths[i])} ({votes_text})")
 
     def vote(self, predictions):
         # predictions: (n_models, n_samples), one row of predicted classes per model
@@ -360,6 +390,47 @@ class late_fusion(feature_fusion):
 
         return features
 
+    def evaluate_test(self, test, matrix=False):
+        # trains on self (training folders) and tests on test (another late_fusion object, with the test folders)
+        for obj in (self, test):
+            for model_name, source_dir in obj.sources.items():
+                if not source_dir.exists():
+                    raise SystemExit(f"{model_name} - {source_dir} does not exist")
+
+        X_train, y_train, _ = self.load_all()
+        X_test, y_test, _ = test.load_all()
+        model_names = list(self.sources)
+
+        predictions = []
+        for name in model_names:
+            if X_train[name].shape[1] != X_test[name].shape[1]:
+                raise ValueError(f"{name} - training has {X_train[name].shape[1]} features, test has {X_test[name].shape[1]}")
+
+            scaler = StandardScaler()
+            X_tr = scaler.fit_transform(X_train[name])
+            X_te = scaler.transform(X_test[name])
+
+            svm = SVC(kernel=self.kernel, C=self.C)
+            svm.fit(X_tr, y_train)
+            predictions.append(svm.predict(X_te))
+
+        predictions = np.array(predictions)
+        voted, ties = self.vote(predictions)
+
+        results = {name: pred for name, pred in zip(model_names, predictions)}
+        results["vote"] = voted
+
+        print("\nf1 on the test set:")
+        for name, pred in results.items():
+            print(f"  {name}: {f1_score(y_test, pred, average='weighted'):.4f}")
+        print(f"samples decided by tie-break ({self.tiebreak}) - {len(ties)} of {len(y_test)}")
+
+        self.image_paths = test.image_paths
+        self.show_errors(y_test, results)
+
+        if matrix:
+            self.show_matrix(y_test, voted)
+
     def organize_images(self, origin_dir, destiny_dir, target_size=(224, 224)):
         model_names = list(self.sources)
         classes_map = {0: "f1", 1: "f2", 2: "f3"}
@@ -412,6 +483,7 @@ class late_fusion(feature_fusion):
 
         X, y, filenames = self.load_all()
         out_of_fold = self.assess(X, y, filenames)
+        self.show_errors(y, out_of_fold)
 
         if matrix:
             self.show_matrix(y, out_of_fold["vote"])
@@ -430,6 +502,9 @@ def main():
     late.add_argument("--vgg16", required=True, help="folder with the vgg16 features")
     late.add_argument("--resnet50v2", required=True, help="folder with the resnet50v2 features")
     late.add_argument("--vit", required=True, help="folder with the vit features")
+    late.add_argument("--test_vgg16", help="folder with the vgg16 test features (optional, enables train/test mode)")
+    late.add_argument("--test_resnet50v2", help="folder with the resnet50v2 test features")
+    late.add_argument("--test_vit", help="folder with the vit test features")
     late.add_argument("--kernel", default="linear", help="kernel (ex: linear, rbf, poly)")
     late.add_argument("--c", type=float, default=1.0, help="C margin")
     late.add_argument("--splits", type=int, default=5, help="number of cross validation splits")
@@ -456,7 +531,14 @@ def main():
         print("\nearly fusion concluded\n")
     elif args.command == "late":
         fusion = late_fusion(args.vgg16, args.resnet50v2, args.vit, kernel=args.kernel, C=args.c, n_splits=args.splits, tiebreak=args.tiebreak)
-        fusion.run(matrix=bool(args.matrix))
+        test_dirs = [args.test_vgg16, args.test_resnet50v2, args.test_vit]
+        if any(test_dirs):
+            if not all(test_dirs):
+                parser.error("--test_vgg16, --test_resnet50v2, and --test_vit must all be provided together.")
+            test_fusion = late_fusion(args.test_vgg16, args.test_resnet50v2, args.test_vit, kernel=args.kernel, C=args.c, tiebreak=args.tiebreak)
+            fusion.evaluate_test(test_fusion, matrix=bool(args.matrix))
+        else:
+            fusion.run(matrix=bool(args.matrix))
         print("\nlate fusion concluded\n")
     elif args.command == "organize":
         fusion = late_fusion(args.vgg16, args.resnet50v2, args.vit, kernel=args.kernel, C=args.c, tiebreak=args.tiebreak)

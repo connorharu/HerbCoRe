@@ -140,14 +140,20 @@ def interactive_mode():
             if finishing == "N":
                 break
         elif choice2 == "8":
-            vgg16_dir = input("\nfolder with the vgg16 features: ").strip()
-            resnet_dir = input("folder with the resnet50v2 features: ").strip()
-            vit_dir = input("folder with the vit features: ").strip()
+            vgg16_dir = input("\nfolder with the vgg16 training features: ").strip()
+            resnet_dir = input("folder with the resnet50v2 training features: ").strip()
+            vit_dir = input("folder with the vit training features: ").strip()
+            test_vgg16_dir = input("\nfolder with the vgg16 test features: ").strip()
+            test_resnet_dir = input("folder with the resnet50v2 test features: ").strip()
+            test_vit_dir = input("folder with the vit test features: ").strip()
             kernel = input("kernel (ex: linear, rbf, poly): ").strip() or "linear"
             c = float(input("C margin: ") or 1.0)
             folds = int(input("fold numbers: ") or 5)
-            tiebreak = input("model that decides ties (vgg16, resnet50v2 or vit - default vit): ").strip() or "resnet50v2"
+            tiebreak = input("model that decides ties (vgg16, resnet50v2 or vit - default vit): ").strip() or "vit"
             show_matrix = input("do you wish to see the confusion matrix?\n[Y] yes\n[N] no\n ").strip().upper() == "Y"
+
+            test_dirs = [test_vgg16_dir, test_resnet_dir, test_vit_dir]
+            use_test_set = any(test_dirs)
 
             if tiebreak not in ("vgg16", "resnet50v2", "vit"):
                 print("\ninvalid model, using vit.")
@@ -155,7 +161,15 @@ def interactive_mode():
 
             print("\nstarting late fusion...")
             fusion_process = late_fusion(vgg16_dir, resnet_dir, vit_dir, kernel, c, folds, tiebreak)
-            fusion_process.run(matrix=show_matrix)
+
+            if use_test_set:
+                if not all(test_dirs):
+                    print("\nprovide all three test feature folders, or leave all three blank.")
+                else:
+                    test_process = late_fusion(test_vgg16_dir, test_resnet_dir, test_vit_dir, kernel, c, folds, tiebreak)
+                    fusion_process.evaluate_test(test_process, matrix=show_matrix)
+            else:
+                fusion_process.run(matrix=show_matrix)
             print("late fusion concluded!")
 
             finishing = input("\nexecute another method?\n[Y] yes\n[N] no\n").strip().upper()
@@ -169,7 +183,7 @@ def interactive_mode():
             destiny_dir = input("output directory (where to create f1, f2, f3): ").strip()
             kernel = input("kernel (ex: linear, rbf, poly): ").strip() or "linear"
             c = float(input("C margin: ") or 1.0)
-            tiebreak = input("model that decides ties (vgg16, resnet50v2 or vit - default vit): ").strip() or "resnet50v2"
+            tiebreak = input("model that decides ties (vgg16, resnet50v2 or vit - default vit): ").strip() or "vit"
 
             if tiebreak not in ("vgg16", "resnet50v2", "vit"):
                 print("\ninvalid model, using vit.")

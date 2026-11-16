@@ -167,7 +167,7 @@ class artificial_inteligence:
         media_f1 = np.mean(f1_folds)
         desvio_f1 = np.std(f1_folds)
 
-        print(f"average d1: {(media_f1):.4f}")
+        print(f"average f1: {(media_f1):.4f}")
         print(f"standard deviation: {np.std(f1_folds):.4f}")
 
         if(matrix):
@@ -295,9 +295,9 @@ def main():
     testing_dataset.add_argument("--kernel", default="linear", help="kernel (ex: linear, rbf, poly)")
     testing_dataset.add_argument("--c", type=float, default=1.0, help="C margin")
     testing_dataset.add_argument("--folds", type=int, default=5, help="fold numbers")
-    testing_dataset.add_argument("--novo_arq1", help="path for the new class 1's .npy file to be tested")
-    testing_dataset.add_argument("--novo_arq2", help="path for the new class 2's .npy file to be tested")
-    testing_dataset.add_argument("--novo_arq3", help="path for the new class 3's .npy file to be tested")
+    testing_dataset.add_argument("--new_arq1", help="path for the new class 1's .npy file to be tested")
+    testing_dataset.add_argument("--new_arq2", help="path for the new class 2's .npy file to be tested")
+    testing_dataset.add_argument("--new_arq3", help="path for the new class 3's .npy file to be tested")
     testing_dataset.add_argument("--matrix", type=int, choices=[0, 1], default=1, help="if 1, shows confusion matrix, if 0, doesn't")
 
     organize = subparsers.add_parser("organize", help="classifies images and organizes the classes in folders")
@@ -346,7 +346,7 @@ def main():
 
         ia.X = ia.scaler.fit_transform(ia.X)  
         ia.svm.fit(ia.X, ia.y)
-        new_f1 = ia.predict_new_dataset(args.novo_arq1, args.novo_arq2, args.novo_arq3, matrix=bool(args.matrix))
+        new_f1 = ia.predict_new_dataset(args.new_arq1, args.new_arq2, args.new_arq3, matrix=bool(args.matrix))
         print(f"\nF1-score on the new dataset: {new_f1:.4f}")
     elif args.command == "organize":
             ia = artificial_inteligence(args.arq1, args.arq2, args.arq3, args.kernel, args.c)
